@@ -1,0 +1,477 @@
+<link rel="import" href="../polymer/polymer.html"/>
+<link rel="import" href="../px-colors-design/colors.html" />
+<link rel="import" href="../px-vis/px-vis-behavior-common.html" />
+<link rel="import" href="../px-vis/px-vis-behavior-d3.html" />
+<link rel="import" href="../px-vis/px-vis-behavior-chart.html" />
+<link rel="import" href="../px-vis/px-vis-behavior-datetime.html" />
+<link rel="import" href="../px-vis/px-vis-svg.html"/>
+<link rel="import" href="../px-vis/px-vis-line.html"/>
+<link rel="import" href="../px-vis/px-vis-scatter.html"/>
+<link rel="import" href="../px-vis/px-vis-event.html"/>
+<link rel="import" href="../px-vis/px-vis-axis.html"/>
+<link rel="import" href="../px-vis/px-vis-gridlines.html"/>
+<link rel="import" href="../px-vis/px-vis-chart-navigator.html"/>
+<link rel="import" href="../px-vis/px-vis-scale.html"/>
+<link rel="import" href="../px-vis/px-vis-interaction-space.html"/>
+<link rel="import" href="../px-vis/px-vis-cursor.html"/>
+<link rel="import" href="../px-vis/px-vis-tooltip.html"/>
+<link rel="import" href="../px-vis/px-vis-register.html"/>
+<link rel="import" href="../px-vis/px-vis-threshold.html"/>
+<link rel="import" href="../px-vis/px-vis-zoom.html"/>
+<link rel="import" href="../px-vis/px-vis-clip-path.html"/>
+
+
+<!--
+Creates an interactive timeseries chart
+
+##### Usage
+
+    <px-vis-timeseries options='{ ... }'></px-vis-timeseries>
+
+@element px-vis-timeseries
+@blurb Creates an interactive timeseries chart
+@homepage index.html
+@demo demo.html
+-->
+<dom-module id="px-vis-timeseries">
+  <link rel="import" type="css" href="css/px-vis-timeseries.css"/>
+  <template>
+    <div class="flex--row u-m safariFlex safariFlexDirectionRow flex" >
+      <!-- Safari 8 flex needs -webkit, which autoprefixer doesn't supply, for some reason. IE10 has it's own implementation of flex which doesn't recognize flex-basis. Joy.-->
+        <div class="inline--flex flex--col safariFlexDirectionCol" style$="-webkit-flex-basis:[[width]]px;flex-basis:[[width]]px;-ms-flex-preferred-size:[[width]]px;">
+          <template is="dom-if" if="[[_topRegister(registerLocation)]]">
+            <px-vis-register
+              height="50"
+              units="[[units]]"
+              width="[[width]]"
+              type="horizontal"
+              tooltip-data=[[tooltipData]]
+              muted-series="[[mutedSeries]]"
+              complete-series-config="[[completeSeriesConfig]]"
+              chart-data="[[chartData]]"
+              x-axis-type="time">
+            </px-vis-register>
+          </template>
+          <px-vis-zoom
+            margin="[[margin]]"
+            extents-data="[[extentsData]]"
+            px-svg-elem=[[pxSvgElem]]>
+          </px-vis-zoom>
+          <px-vis-scale
+            x-axis-type="time"
+            y-axis-type="linear"
+            width="[[width]]"
+            height="[[height]]"
+            margin="[[margin]]"
+            chart-data="[[chartData]]"
+            complete-series-config="[[completeSeriesConfig]]"
+            chart-extents="[[chartExtents]]"
+            selected-domain="[[selectedDomain]]">
+          </px-vis-scale>
+          <px-vis-svg
+            width="[[width]]"
+            height="[[height]]"
+            margin="[[margin]]">
+          </px-vis-svg>
+
+          <px-vis-clip-path
+            svg="[[svg]]"
+            x="[[x]]"
+            y="[[y]]"
+            width="[[width]]"
+            height="[[height]]"
+            margin="[[margin]]">
+          </px-vis-clip-path>
+
+          <template is="dom-repeat" items="[[_returnKeys(completeSeriesConfig)]]">
+            <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]">
+              <px-vis-line
+                svg="[[svg]]"
+                series-id="[[item]]"
+                chart-data="[[chartData]]"
+                complete-series-config="[[completeSeriesConfig]]"
+                x="[[x]]"
+                y="[[y]]"
+                current-domain-x="[[currentDomainX]]"
+                current-domain-y="[[currentDomainY]]"
+                clip-path="[[seriesClipPath]]"
+                muted-series="[[mutedSeries]]">
+              </px-vis-line>
+            </template>
+            <template is="dom-if" if="[[_chartTypeScatter(item,completeSeriesConfig)]]">
+              <px-vis-scatter
+                svg="[[svg]]"
+                series-id="[[item]]"
+                chart-data="[[chartData]]"
+                complete-series-config="[[completeSeriesConfig]]"
+                x="[[x]]"
+                y="[[y]]"
+                current-domain-x="[[currentDomainX]]"
+                current-domain-y="[[currentDomainY]]"
+                clip-path="[[seriesClipPath]]"
+                muted-series="[[mutedSeries]]">
+              </px-vis-scatter>
+            </template>
+          </template>
+
+          <template is="dom-repeat" items="[[eventData]]">
+            <px-vis-event
+              svg="[[svg]]"
+              x-axis-type="time"
+              x-key="time"
+              event-id="[[item.id]]"
+              event-data="[[item]]"
+              x="[[x]]"
+              y="[[y]]"
+              event-config="[[eventConfig]]"
+              current-domain-x="[[currentDomainX]]"
+              current-domain-y="[[currentDomainY]]"
+              clip-path="[[clipPath]]">
+            </px-vis-event>
+          </template>
+
+          <px-vis-threshold
+            svg="[[svg]]"
+            complete-series-config="[[completeSeriesConfig]]"
+            chart-data="[[thresholdData]]"
+            x="[[x]]"
+            y="[[y]]"
+            current-domain-x="[[currentDomainX]]"
+            current-domain-y="[[currentDomainY]]"
+            show-threshold-box="[[showThresholdBox]]">
+          </px-vis-threshold>
+
+          <px-vis-gridlines
+            svg="[[svg]]"
+            axis="[[x]]"
+            margin="[[margin]]"
+            length="[[height]]"
+            orientation="bottom"
+            current-domain="[[currentDomainX]]">
+          </px-vis-gridlines>
+
+          <px-vis-gridlines
+            svg="[[svg]]"
+            axis="[[y]]"
+            margin="[[margin]]"
+            length="[[width]]"
+            orientation="left"
+            current-domain="[[currentDomainY]]">
+          </px-vis-gridlines>
+
+          <px-vis-axis
+            svg="[[svg]]"
+            axis="[[x]]"
+            margin="[[margin]]"
+            title="Date"
+            orientation="bottom"
+            label-position="after"
+            current-domain="[[currentDomainX]]">
+          </px-vis-axis>
+          <px-vis-axis
+            svg="[[svg]]"
+            axis="[[y]]"
+            margin="[[margin]]"
+            title="Hz"
+            orientation="left"
+            complete-series-config="[[completeSeriesConfig]]"
+            muted-series=[[mutedSeries]]
+            current-domain="[[currentDomainY]]">
+          </px-vis-axis>
+
+          <px-vis-interaction-space
+            svg="[[svg]]"
+            width="[[width]]"
+            height="[[height]]"
+            margin="[[margin]]"
+            x-axis-type="time"
+            complete-series-config="[[completeSeriesConfig]]"
+            chart-data="[[chartData]]"
+            x="[[x]]"
+            y="[[y]]"
+            current-domain-x="[[currentDomainX]]"
+            current-domain-y="[[currentDomainY]]"
+            selection-type=[[selectionType]]>
+          </px-vis-interaction-space>
+
+          <px-vis-cursor
+            svg="[[svg]]"
+            width="[[width]]"
+            height="[[height]]"
+            margin="[[margin]]"
+            complete-series-config="[[completeSeriesConfig]]"
+            chart-data="[[chartData]]"
+            horizontal-line="full"
+            vertical-line="full"
+            circle-point="yes"
+            tooltip-data="[[tooltipData]]">
+          </px-vis-cursor>
+
+          <px-vis-chart-navigator
+            x-axis-type="time"
+            y-axis-type="linear"
+            width="[[width]]"
+            height="100"
+            margin="[[marginNav]]"
+            default-series-config="[[defaultSeriesConfig]]"
+            series-config="[[seriesConfig]]"
+            include-all-series="[[includeAllSeries]]"
+            chart-data="[[chartData]]"
+            nav-series-limit="[[navSeriesLimit]]"
+            chart-domain-x="[[currentDomainX]]"
+            chart-domain-y="[[currentDomainY]]"
+            selected-domain="[[selectedDomain]]">
+          </px-vis-chart-navigator>
+        </div>
+      <template is="dom-if" if="[[enableTooltip]]">
+        <px-vis-tooltip
+          px-svg-elem=[[pxSvgElem]]
+          width="250"
+          margin="[[margin]]"
+          chart-data="[[chartData]]"
+          tooltip-data="[[tooltipData]]"
+          complete-series-config="[[completeSeriesConfig]]"
+          x-axis-type="time">
+        </px-vis-tooltip>
+      </template>
+      <template is="dom-if" if="[[_sideRegister(registerLocation)]]">
+        <px-vis-register
+          height="[[height]]"
+          width="250"
+          units="[[units]]"
+          complete-series-config="[[completeSeriesConfig]]"
+          tooltip-data=[[tooltipData]]
+          muted-series="[[mutedSeries]]"
+          chart-data="[[chartData]]"
+          x-axis-type="time">
+        </px-vis-register>
+      </template>
+    </div>
+  </template>
+</dom-module>
+
+<script>
+    Polymer({
+
+        is: 'px-vis-timeseries',
+
+        behaviors: [
+          PxVisBehavior.sizing,
+          PxVisBehavior.formatting,
+          PxVisBehavior.mutedSeries,
+          PxVisBehavior.tooltipData,
+          PxVisBehavior.extentsData,
+          PxVisBehaviorTime.datetime,
+          PxVisBehaviorD3.svg,
+          PxVisBehaviorD3.axes,
+          PxVisBehaviorD3.axis,
+          PxVisBehaviorD3.selectedDomain,
+          PxVisBehavior.dataset,
+          PxVisBehavior.completeSeriesConfig,
+          PxVisBehavior.chartExtents,
+          PxVisBehaviorD3.interaction,
+          commonColors,
+          PxVisBehavior.commonMethods,
+          PxVisBehaviorChart.chartCommon,
+          PxVisBehavior.zoomSelection,
+          PxVisBehavior.units,
+          PxVisBehavior.axisTypes,
+          PxVisBehavior.events
+        ],
+
+        /**
+         * Properties block, expose attribute values to the DOM via 'reflect'
+         *
+         * @property properties
+         * @type Object
+         */
+        properties: {
+          /**
+           *
+           *
+           *
+           * @type Array
+           */
+          series:{
+            type:Array
+          },
+          /**
+           *
+           * @type Array
+           */
+          events:{
+            type:Array
+          },
+          /**
+           *
+           *
+           *
+           * @type Array
+           */
+          thresholds:{
+            type:Array
+          },
+          /**
+           * Defines where to locate the X-axis.
+           * - `bottom`
+           * - `top`
+           *
+           * @property xAxisLocation
+           * @type String
+           * @default bottom
+           */
+          xAxisLocation:{
+            type:String,
+            value:'bottom'
+          },
+          /**
+           * Defines where to locate the Y-axis.
+           * - `left`
+           * - `right`
+           *
+           * @property yAxisLocation
+           * @type String
+           * @default left
+           */
+          yAxisLocation:{
+            type:String,
+            value:'left'
+          },
+          /**
+           * Defines the base margin for the navigator.
+           *
+           * @property marginNav
+           * @type Object
+           * @default { top: 5, right: 5, bottom: 5, left: 5}
+           * @private
+           */
+          marginNav:{
+            type:Object,
+            value: { top: 5, right: 5, bottom: 5, left: 5},
+          },
+          /**
+           * Defines where the register will appear. Valid entries are`:
+           * - 'none'
+           * - 'top'
+           * - 'side'
+           * - 'both'
+           *
+           * @property registerLocation
+           * @type string
+           * @default side
+          */
+          registerLocation:{
+            type:String,
+            value:'side'
+          },
+          /**
+           * Configuration object for the chart. Key is the property name.
+           *
+           * @property options
+           * @type Object
+          */
+          options:{
+            type:Object,
+            notify:true,
+            observer:'_setConfig'
+          },
+          /**
+           * container for the data object that drives the thresholds
+           * Generally loaded with an iron-ajax tag (but doesnt have to be)
+           * This can be set declaratively
+           *
+           * @property thresholdData
+           * @type Object
+           */
+          thresholdData:{
+            type: Array,
+            notify: true
+          },
+          /**
+           * container for the data object that drives the events
+           * Generally loaded with an iron-ajax tag (but doesnt have to be)
+           * This can be set declaratively
+           *
+           * @property eventData
+           * @type Object
+           */
+          eventData:{
+            type: Array,
+            notify: true
+          },
+          /**
+           * Boolean to turn the on-chart tooltip on or off
+           *
+           * @property enableTooltip
+           * @type Boolean
+           */
+          enableTooltip: {
+            type: Boolean,
+            notify: true,
+            value: false
+          },
+          pxSvgElem : {
+            type: Object,
+            value: function() { return {};}
+          }
+        },
+
+        ready:function(){
+          this._calcMargins();
+        },
+        /**
+         * Cycles through the Configuration object and sets each property. Triggers each components declarative binding
+         *
+         * @method _setConfig
+         */
+        _setConfig: function(){
+          if(typeof(this.options) !== 'object'){
+            console.error('Configuration options must be valid JSON');
+            return;
+          }
+
+          var keys = Object.keys(this.options);
+          for(var i = 0; i < keys.length; i++){
+            var key = keys[i];
+            this.set(key, this.options[key]);
+          }
+        },
+        /**
+         * Overwrites default margins based on settings
+         *
+         * @method _calcMargins
+         */
+        _calcMargins:function(){
+          var topMargin = 25,
+              rightMargin = 10,
+              bottomMargin = 10,
+              leftMargin = 10;
+
+          if(this.xAxisLocation === 'bottom'){
+            bottomMargin = 40;
+          } else if(this.xAxisLocation === 'top'){
+            topMargin = 40;
+          }
+
+          // TODO if multiple Y...
+          if(this.yAxisLocation === 'left'){
+            leftMargin = 50;
+          } else if(this.yAxisLocation === 'right'){
+            rightMargin = 40;
+          }
+
+          this.set('margin', {
+            'top': topMargin,
+            'right': rightMargin,
+            'bottom': bottomMargin,
+            'left': leftMargin
+          });
+          this.set('marginNav', {
+            'top': 5,
+            'right': rightMargin,
+            'bottom': 20,
+            'left': leftMargin
+          });
+        }
+    });
+</script>

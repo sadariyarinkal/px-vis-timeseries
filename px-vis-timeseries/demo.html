@@ -1,0 +1,199 @@
+<!doctype html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>px-vis-timeseries Demo</title>
+        <!-- Requires Webcomponents.js polyfill is provided by the page for browsers that don't support html imports -->
+        <script src="../webcomponentsjs/webcomponents-lite.min.js"></script>
+        <!-- Import custom element. Note: see comment about relative paths to dependencies in the *.html file referenced below -->
+        <link rel="import" href="../px-theme/px-theme.html"/>
+        <link rel="import" href="px-vis-timeseries.html"/>
+        <link rel="import" href="../px-vis/px-vis-data.html"/>
+        <link rel="import" href="../px-vis/px-vis-data-converter.html"/>
+
+        <link rel="stylesheet" type="text/css" href="css/px-vis-timeseries.css"/>
+
+    </head>
+
+    <body>
+      <template is="dom-bind">
+        <px-vis-timeseries
+          options = '{
+            "width": "1000",
+            "height": "500",
+            "enableTooltip":true,
+            "registerLocation":"both",
+            "eventConfig": {
+              "Recalibrate":{
+                "color": "blue",
+                "icon": "fa-camera",
+                "type": "fa",
+                "offset":[0,0]
+              },
+              "Fan start":{
+                "color": "green",
+                "icon": "\uf015",
+                "type": "unicode",
+                "offset":[1,0]
+              },
+              "Fan stop":{
+                "icon": "ge_logo.png",
+                "type": "image",
+                "offset":[0,-20],
+                "size":"20"
+              }
+            },
+            "thresholdData":[
+              { "for":"mySeries", "type":"max", "value":35.4784 },
+              { "for":"mySeries", "type":"min", "value":7.6531 },
+              { "for":"mySeries", "type":"mean", "value":15.330657585139331 },
+              { "for":"hpt-acc-position-cruise", "type":"mean", "value":75 },
+              { "for":"", "type":"quartile", "value":17 }
+            ],
+            "navSeriesLimit":0,
+            "showThresholdBox":false,
+            "includeAllSeries": true,
+            "selectionType": "xAxis"
+          }'
+          series-config='[[seriesConfig]]'
+          units="Hz"
+          default-series-config='{
+              "type": "line",
+              "x": "TimeStamp",
+              "xMin": "dynamic",
+              "xMax": "dynamic",
+              "yMin": 0,
+              "yMax": "dynamic"
+            }'
+          chart-data="[[chartData]]"
+          event-data="[[eventData]]">
+        </px-vis-timeseries>
+        <px-vis-data
+          id = "seriesAjax"
+          request-data = '[{
+            "type":"line",
+            "name":"mySeries",
+              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruise.json"
+            },{
+              "type":"line",
+              "url":"/bower_components/px-demo-data/demo-data/aviation/hpt-acc-position-cruise.json"
+          }]'
+          data-var="originalData"
+          lists="append"
+          response-data="{{originalData}}">
+        </px-vis-data>
+        <px-vis-data-converter
+          data-key = "series"
+          id-key = "name"
+          original-data = '[[originalData]]'
+          series-config="{{seriesConfig}}"
+          chart-data="{{chartData}}">
+        </px-vis-data-converter>
+        <px-vis-data
+          id = "eventAjax"
+          request-data = '[{
+              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruise-events.json"
+          }]'
+          data-var="eventData"
+          lists = "flat"
+          response-data="{{eventData}}">
+        </px-vis-data>
+
+
+        <px-vis-timeseries
+          width = "1000"
+          height = "500"
+          include-all-series
+          selection-type= "xy"
+          chart-data="[[chartData2]]">
+        </px-vis-timeseries>
+        <px-vis-data
+          id = "seriesAjax"
+          request-data = '[{
+              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json"
+            }]'
+          data-var="chartData2"
+          lists="flat"
+          response-data="{{chartData2}}">
+        </px-vis-data>
+
+        <px-vis-timeseries
+          width = "1000"
+          height = "500"
+          selection-type= "yAxis"
+          series-config='{
+            "y":{
+              "type": "scatter",
+              "name": "mySeries",
+              "x":"x",
+              "y":"y"
+            }
+          }'
+          chart-data="[[chartData3]]">
+        </px-vis-timeseries>
+        <px-vis-data
+          id = "seriesAjax"
+          request-data = '[{
+              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json"
+            }]'
+          data-var="chartData3"
+          lists="flat"
+          response-data="{{chartData3}}">
+        </px-vis-data>
+
+        <!-- <px-vis-timeseries
+          options = '{
+            "width": "1000",
+            "height": "500",
+            "enableTooltip":true,
+            "registerLocation":"none",
+            "navSeriesLimit":1,
+            "includeAllSeries": true,
+            "selectionType": "xAxis"
+          }'
+          default-series-config='{
+              "type": "line",
+              "x": "TimeStamp",
+              "xMin": "dynamic",
+              "xMax": "dynamic",
+              "yMin": 0,
+              "yMax": "dynamic"
+            }'
+          chart-data="[[apmData]]">
+          </px-vis-timeseries>
+          <px-vis-data
+          id = "seriesAjax"
+          request-data = '[{
+              "url":"/bower_components/px-demo-data/demo-data/apm/timeseries.json"
+            }]'
+          data-var="chartData"
+          lists="flat"
+          response-data="{{apmData}}">
+          </px-vis-data> -->
+
+
+          <!-- <px-vis-timeseries
+            id="chartCustom"
+            options = '{
+              "width": "1000",
+              "height": "500",
+              "series": [{"url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruise.json"}]
+            }'
+            ></px-vis-timeseries> -->
+    </template>
+    <!-- <script>
+      window.addEventListener('WebComponentsReady', function() {
+        var chart = document.getElementById('chartCustom');
+        console.log(chart);
+        console.log(chart.svg);
+        chart.svg.append('circle')
+          .attr("cx", 100)
+          .attr("cy", 100)
+          .attr("r", 20);
+
+      });
+    </script> -->
+    </body>
+</html>
