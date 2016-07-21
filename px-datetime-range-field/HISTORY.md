@@ -1,3 +1,7 @@
+v0.3.6
+==================
+* added footer to demo
+
 v0.3.5
 ==================
 * updated range error message
