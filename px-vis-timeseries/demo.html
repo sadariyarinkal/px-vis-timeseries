@@ -59,9 +59,9 @@
             "selectionType": "xAxis"
           }'
           series-config='[[seriesConfig]]'
-          units="Hz"
           default-series-config='{
               "type": "line",
+              "yAxisUnit": "Hz",
               "x": "TimeStamp",
               "xMin": "dynamic",
               "xMax": "dynamic",
@@ -76,10 +76,10 @@
           request-data = '[{
             "type":"line",
             "name":"mySeries",
-              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruise.json"
+              "url":"../px-demo-data/demo-data/aviation/delta-egt-cruise.json"
             },{
               "type":"line",
-              "url":"/bower_components/px-demo-data/demo-data/aviation/hpt-acc-position-cruise.json"
+              "url":"../px-demo-data/demo-data/aviation/hpt-acc-position-cruise.json"
           }]'
           data-var="originalData"
           lists="append"
@@ -95,7 +95,7 @@
         <px-vis-data
           id = "eventAjax"
           request-data = '[{
-              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruise-events.json"
+              "url":"../px-demo-data/demo-data/aviation/delta-egt-cruise-events.json"
           }]'
           data-var="eventData"
           lists = "flat"
@@ -115,7 +115,7 @@
         <px-vis-data
           id = "seriesAjax"
           request-data = '[{
-              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json"
+              "url":"../px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json"
             }]'
           data-var="chartData2"
           lists="flat"
@@ -142,7 +142,7 @@
         <px-vis-data
           id = "seriesAjax"
           request-data = '[{
-              "url":"/bower_components/px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json"
+              "url":"../px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json"
             }]'
           data-var="chartData3"
           lists="flat"
