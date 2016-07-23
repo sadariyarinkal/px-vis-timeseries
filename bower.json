@@ -1,6 +1,6 @@
 {
   "name": "px-vis-timeseries",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "main": [
     "px-vis-timeseries.html"
   ],
@@ -26,6 +26,6 @@
   "resolutions": {
     "polymer": "^1.5.0",
     "px-theme": "~0.8.0",
-    "px-vis-timeseries": "^0.0.3"
+    "px-vis-timeseries": "^0.0.4"
   }
 }
