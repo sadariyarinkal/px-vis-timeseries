@@ -1,6 +1,6 @@
 {
   "name": "px-vis-timeseries",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "main": [
     "px-vis-timeseries.html"
   ],
@@ -26,11 +26,11 @@
     "px-starter-kit-design": "~0.4.9"
   },
   "homepage": "https://github.com/PredixDev/px-vis-timeseries",
-  "_release": "0.1.4",
+  "_release": "0.1.5",
   "_resolution": {
     "type": "version",
-    "tag": "v0.1.4",
-    "commit": "8789773d1d6b9dd21fd318a819f1b95744ae4acb"
+    "tag": "v0.1.5",
+    "commit": "ebab9c5de2e9fb625cf84d0e3171848512de8679"
   },
   "_source": "https://github.com/PredixDev/px-vis-timeseries.git",
   "_target": "^0.1.2",
