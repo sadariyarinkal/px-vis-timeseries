@@ -1,3 +1,11 @@
+v0.1.7
+==================
+* added automatic resize
+
+v0.1.6
+==================
+* demo update
+
 v0.1.5
 ==================
 * Added vulcanize index and demo

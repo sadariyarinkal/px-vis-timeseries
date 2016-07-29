@@ -638,6 +638,10 @@ a {
 .viewport--full-height {
   min-height: 100vh; }
 
+.wrapper {
+  width: 100%;
+  height: 100%; }
+
 /*------------------------------------*    #CLEARFIX
 \*------------------------------------*/
 /**
@@ -765,7 +769,7 @@ a {
       -ms-flex: none !important;
           flex: none !important; }
 
-@media screen and (max-width: 47.9rem) {
+@media screen and (max-width: 47.9375rem) {
   .u-1\/1-palm {
     width: 100% !important; }
   .u-1\/2-palm {
@@ -824,7 +828,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 48rem) and (max-width: 63.9rem) {
+@media screen and (min-width: 48rem) and (max-width: 68.204166667rem) {
   .u-1\/1-lap {
     width: 100% !important; }
   .u-1\/2-lap {
@@ -942,7 +946,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (max-width: 63.9rem) {
+@media screen and (max-width: 68.2rem) {
   .u-1\/1-portable {
     width: 100% !important; }
   .u-1\/2-portable {
@@ -1001,7 +1005,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 63.9rem) {
+@media screen and (min-width: 68.266666667rem) {
   .u-1\/1-desk {
     width: 100% !important; }
   .u-1\/2-desk {
@@ -1060,7 +1064,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 100%) {
+@media screen and (min-width: 80rem) {
   .u-1\/1-desk-wide {
     width: 100% !important; }
   .u-1\/2-desk-wide {
@@ -1190,7 +1194,7 @@ a {
 
     </head>
 
-    <body><div hidden="" by-vulcanize=""><style is="custom-style">
+    <body style="padding:30px"><div hidden="" by-vulcanize=""><style is="custom-style">
 
   @charset "UTF-8";
 /*------------------------------------*    #PX-COLORS-DESIGN
@@ -40698,6 +40702,10 @@ a {
 .viewport--full-height {
   min-height: 100vh; }
 
+.wrapper {
+  width: 100%;
+  height: 100%; }
+
 /*------------------------------------*    #CLEARFIX
 \*------------------------------------*/
 /**
@@ -40825,7 +40833,7 @@ a {
       -ms-flex: none !important;
           flex: none !important; }
 
-@media screen and (max-width: 47.9rem) {
+@media screen and (max-width: 47.9375rem) {
   .u-1\/1-palm {
     width: 100% !important; }
   .u-1\/2-palm {
@@ -40884,7 +40892,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 48rem) and (max-width: 63.9rem) {
+@media screen and (min-width: 48rem) and (max-width: 68.204166667rem) {
   .u-1\/1-lap {
     width: 100% !important; }
   .u-1\/2-lap {
@@ -41002,7 +41010,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (max-width: 63.9rem) {
+@media screen and (max-width: 68.2rem) {
   .u-1\/1-portable {
     width: 100% !important; }
   .u-1\/2-portable {
@@ -41061,7 +41069,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 63.9rem) {
+@media screen and (min-width: 68.266666667rem) {
   .u-1\/1-desk {
     width: 100% !important; }
   .u-1\/2-desk {
@@ -41120,7 +41128,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 100%) {
+@media screen and (min-width: 80rem) {
   .u-1\/1-desk-wide {
     width: 100% !important; }
   .u-1\/2-desk-wide {
@@ -41247,26 +41255,26 @@ a {
   color: white; }
 
 </style>
-    <div class="flex--row u-m safariFlex safariFlexDirectionRow flex">
+    <div id="wrapper" class="flex--row u-m safariFlex safariFlexDirectionRow flex wrapper">
       
         <div class="inline--flex flex--col" style$="-webkit-flex-basis:[[width]]px;flex-basis:[[width]]px;-ms-flex-preferred-size:[[width]]px;">
           <template is="dom-if" if="[[_topRegister(registerLocation)]]">
-            <px-vis-register height="50" units="[[units]]" width="[[width]]" type="horizontal" tooltip-data="[[tooltipData]]" muted-series="[[mutedSeries]]" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x-axis-type="time">
+            <px-vis-register id="topRegister" height="50" units="[[units]]" width="[[width]]" type="horizontal" tooltip-data="[[tooltipData]]" muted-series="[[mutedSeries]]" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x-axis-type="time">
             </px-vis-register>
           </template>
           <template is="dom-if" if="[[enableTooltip]]">
             <px-vis-tooltip px-svg-elem="[[pxSvgElem]]" width="250" margin="[[margin]]" chart-data="[[chartData]]" tooltip-data="[[tooltipData]]" complete-series-config="[[completeSeriesConfig]]" x-axis-type="time">
             </px-vis-tooltip>
           </template>
-          <px-vis-svg-canvas width="[[width]]" height="[[height]]" margin="[[margin]]">
+          <px-vis-svg-canvas class="inline--flex" width="[[width]]" height="[[height]]" margin="[[margin]]">
           </px-vis-svg-canvas>
 
-          <px-vis-chart-navigator x-axis-type="time" y-axis-type="linear" width="[[width]]" height="100" margin="[[marginNav]]" default-series-config="[[defaultSeriesConfig]]" series-config="[[seriesConfig]]" include-all-series="[[includeAllSeries]]" chart-data="[[chartData]]" nav-series-limit="[[navSeriesLimit]]" chart-domain-x="[[currentDomainX]]" chart-domain-y="[[currentDomainY]]">
+          <px-vis-chart-navigator id="navigator" x-axis-type="time" y-axis-type="linear" width="[[width]]" height="100" margin="[[marginNav]]" default-series-config="[[defaultSeriesConfig]]" series-config="[[seriesConfig]]" include-all-series="[[includeAllSeries]]" chart-data="[[chartData]]" nav-series-limit="[[navSeriesLimit]]" chart-domain-x="[[currentDomainX]]" chart-domain-y="[[currentDomainY]]">
           </px-vis-chart-navigator>
         </div>
 
       <template is="dom-if" if="[[_sideRegister(registerLocation)]]">
-        <px-vis-register height="[[height]]" width="250" units="[[units]]" complete-series-config="[[completeSeriesConfig]]" tooltip-data="[[tooltipData]]" muted-series="[[mutedSeries]]" chart-data="[[chartData]]" x-axis-type="time">
+        <px-vis-register id="sideRegister" height="[[height]]" width="250" units="[[units]]" complete-series-config="[[completeSeriesConfig]]" tooltip-data="[[tooltipData]]" muted-series="[[mutedSeries]]" chart-data="[[chartData]]" x-axis-type="time">
         </px-vis-register>
       </template>
     </div> 
@@ -41303,9 +41311,9 @@ a {
     <px-vis-gridlines svg="[[svg]]" axis="[[y]]" margin="[[margin]]" length="[[width]]" orientation="left" current-domain="[[currentDomainY]]">
     </px-vis-gridlines>
 
-    <px-vis-axis svg="[[svg]]" axis="[[x]]" margin="[[margin]]" title="Date" orientation="bottom" label-position="after" current-domain="[[currentDomainX]]">
+    <px-vis-axis svg="[[svg]]" axis="[[x]]" margin="[[margin]]" height="[[height]]" title="Date" orientation="bottom" label-position="after" current-domain="[[currentDomainX]]">
     </px-vis-axis>
-    <px-vis-axis svg="[[svg]]" axis="[[y]]" margin="[[margin]]" title="Hz" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" current-domain="[[currentDomainY]]">
+    <px-vis-axis svg="[[svg]]" axis="[[y]]" margin="[[margin]]" height="[[height]]" title="Hz" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" current-domain="[[currentDomainY]]">
     </px-vis-axis>
 
     <px-vis-interaction-space svg="[[svg]]" width="[[width]]" height="[[height]]" margin="[[margin]]" x-axis-type="time" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" selection-type="[[selectionType]]">
@@ -41344,7 +41352,8 @@ a {
           PxVisBehaviorD3.clipPath,
           PxVisBehaviorD3.axisConfig,
           PxVisBehaviorChart.chartCommon,
-          PxVisBehaviorChart.precipitationPattern
+          PxVisBehaviorChart.precipitationPattern,
+          Polymer.IronResizableBehavior
         ],
 
         /**
@@ -41483,6 +41492,9 @@ a {
             value: function() { return {};}
           }
         },
+        listeners: {
+          'iron-resize': '_onIronResize'
+        },
 
         ready:function(){
           this._calcMargins();
@@ -41540,6 +41552,30 @@ a {
             'bottom': 20,
             'left': leftMargin
           });
+        },
+        _onIronResize: function() {
+          this.debounce('ironresize', function() {
+            var wrapperRect = this.$.wrapper.getBoundingClientRect(),
+                navigatorRect = this.$.navigator.getBoundingClientRect(),
+                widthDeduct = 0,
+                heightDeduct = 0;
+
+            if(this._topRegister(this.registerLocation)) {
+              var regRect = this.$$('#topRegister').getBoundingClientRect();
+              heightDeduct = regRect.height;
+            }
+
+            if(this._sideRegister(this.registerLocation)) {
+              var regRect = this.$$('#sideRegister').getBoundingClientRect();
+              widthDeduct = regRect.width;
+            }
+
+            heightDeduct += navigatorRect.height;
+
+            this.set('width', wrapperRect.width - widthDeduct);
+            this.set('height', wrapperRect.height - heightDeduct);
+          
+          },50);
         }
     });
 </script>
@@ -43158,28 +43194,11 @@ if (!window.Promise) {
 
         <br>
         <br>
-        <h2>Example of a timeseries rendering ~345,000 datapoints to canvas</h2>
-        <px-vis-timeseries options="{
-            &quot;width&quot;: &quot;1000&quot;,
-            &quot;height&quot;: &quot;500&quot;,
-            &quot;enableTooltip&quot;:true,
-            &quot;registerLocation&quot;:&quot;none&quot;,
-            &quot;navSeriesLimit&quot;:5,
-            &quot;includeAllSeries&quot;: true,
-            &quot;selectionType&quot;: &quot;xAxis&quot;
-          }" render-to-canvas="" default-series-config="{
-              &quot;type&quot;: &quot;line&quot;,
-              &quot;x&quot;: &quot;TimeStamp&quot;,
-              &quot;xMin&quot;: &quot;dynamic&quot;,
-              &quot;xMax&quot;: &quot;dynamic&quot;,
-              &quot;yMin&quot;: 0,
-              &quot;yMax&quot;: &quot;dynamic&quot;
-            }" chart-data="[[apmData]]">
-          </px-vis-timeseries>
-          <px-vis-data id="seriesAjax" request-data="[{
-              &quot;url&quot;:&quot;../px-demo-data/demo-data/apm/timeseries.json&quot;
-            }]" data-var="chartData" lists="flat" response-data="{{apmData}}">
-          </px-vis-data>
+        <h2>Example of a timeseries rendering to canvas</h2>
+        <px-vis-timeseries width="1000" height="500" include-all-series="" render-to-canvas="" selection-type="xy" chart-data="[[chartData2]]">
+        </px-vis-timeseries>
+
+        
 
         <br>
         <br>
@@ -43198,11 +43217,26 @@ if (!window.Promise) {
             }]" data-var="chartData3" lists="flat" response-data="{{chartData3}}">
         </px-vis-data>
 
-          
-
-          
+        <br>
+        <br>
+        <h2>Example of a timeseries with a additional d3 rectangle drawn on top</h2>
+        <px-vis-timeseries id="chartCustom" options="{
+            &quot;width&quot;: &quot;1000&quot;,
+            &quot;height&quot;: &quot;500&quot;
+          }" include-all-series="" chart-data="[[chartData3]]"></px-vis-timeseries>
     </template>
-    
+    <script>
+      window.addEventListener('WebComponentsReady', function() {
+        var chart = document.getElementById('chartCustom');
+          chart.svg.append('rect')
+            .attr("y", 200)
+            .attr("x", 0)
+            .attr("height", 100)
+            .attr("width", 1000)
+            .attr('opacity',0.25)
+            .attr('fill', 'rgb(70,173,0)');
+      });
+    </script>
     
 
 </body></html>
