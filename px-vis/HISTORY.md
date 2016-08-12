@@ -1,3 +1,55 @@
+v0.1.18
+==================
+* Adding support to export chart components to images
+
+v0.1.17
+==================
+* Fix missing type in px-vis-pie _arcs
+
+v0.1.16
+==================
+* Allow chart navigator to be used without data and/or driven by a "range" attribute
+
+v0.1.15
+==================
+* Fix racing conditions with rangepicker
+
+v0.1.14
+==================
+* Make sure rangepicker can be used in combination with time based charts
+
+v0.1.13
+==================
+* Fix brush and axis-brush for dynamic sizing
+
+v0.1.12
+==================
+* auto resize on chart navigator
+
+v0.1.11
+==================
+* bug fixes, progressive rendering for canvas
+
+v0.1.10
+==================
+* bug fix
+
+v0.1.9
+==================
+* Improving tests and bug fixes
+
+v0.1.8
+==================
+* Make auto resize work for multi axis/scale/brush
+
+v0.1.7
+==================
+* Added demo link to README
+
+v0.1.6
+==================
+* Improve data handling by pie slices, allow empty data as well
+
 v0.1.5
 ==================
 * Added vulcanize index and demo

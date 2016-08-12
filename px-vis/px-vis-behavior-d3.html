@@ -1,4 +1,5 @@
 <link rel="import" href="px-vis-d3.html" />
+<link rel="import" href="px-vis-imports.html" />
 <script>
 /*
   Polyfill to add .remove() for IE11.
@@ -44,7 +45,7 @@ PxVisBehaviorD3.svg = {
      * @property svg
      * @type Object
      */
-    svg:{
+    svg: {
       type: Object,
       notify:true
     },
@@ -52,7 +53,7 @@ PxVisBehaviorD3.svg = {
     *
     * The SVG element inside the chart - not a D3 selected element.
     */
-    pxSvgElem : {
+    pxSvgElem: {
       type: Object,
       notify:true
     }
@@ -66,7 +67,7 @@ PxVisBehaviorD3.svg = {
    * @param {string}
    * @return {id string}
    */
-  generateRandomID: function(baseStr){
+  generateRandomID: function(baseStr) {
     // FIXME In theory, we could get two of the same IDs.
     var id = baseStr,
         abc = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
@@ -88,13 +89,99 @@ PxVisBehaviorD3.svg = {
    * @param {element}
    * @param {string}
   */
-  cloneSVGElem: function(svg,prop){
+  cloneSVGElem: function(svg,prop) {
     var tempSVG = svg,
         clone = tempSVG.cloneNode();
 
     tempSVG.parentNode.appendChild(clone);
 
     this.set(prop,Px.d3.select(clone));
+  },
+
+  /**
+   * Draws the current svg into a canvas
+   */
+  _drawSVGOnCanvas: function(canvas, callback) {
+    var svgData = this.pxSvgElem.outerHTML;
+
+    //stupid IE can't get outerHTML of svg even though it's now a W3C spec
+    if(!svgData) {
+      svgData = this._getSVGOuterHtml(this.pxSvgElem);
+    }
+    
+    //this would be the "native" way to do it. Axes are rendered slightly sharper,
+    //but labels seem to be slightly cut off. Not investigating it for now and
+    //falling back on canvg because of IE anyway
+    // var DOMURL = window.URL || window.webkitURL || window,
+    //     img = new Image(),
+    //     blob,
+    //     url;
+    // blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'}),
+    // url = DOMURL.createObjectURL(blob);
+
+    // img.crossOrigin="Anonymous";
+    // img.onload = function() {
+    //     context.drawImage(img, 0, 0);
+    //     DOMURL.revokeObjectURL(blob);
+    // }
+    // img.src = url;
+
+    //because IE 10/11 automatically taints any canvas where an SVG image has been
+    //drawn we need to use a third party to interprete the image in javascript
+    //instructions for the canvas
+    canvg(canvas, svgData, {ignoreDimensions: true, 
+                            ignoreClear: true, 
+                            renderCallback: callback,
+                            resultCanvas: canvas});
+  },
+
+  _getSVGOuterHtml: function(svg) {
+    var serializeXML = function(node, output) {
+      var nodeType = node.nodeType;
+      if (nodeType == 3) { // TEXT nodes.
+        // Replace special XML characters with their entities.
+        output.push(node.textContent.replace(/&/, '&amp;').replace(/</, '&lt;').replace('>', '&gt;'));
+      } else if (nodeType == 1) { // ELEMENT nodes.
+        // Serialize Element nodes.
+        output.push('<', node.tagName);
+        if (node.hasAttributes()) {
+          var attrMap = node.attributes;
+          for (var i = 0, len = attrMap.length; i < len; ++i) {
+            var attrNode = attrMap.item(i);
+            output.push(' ', attrNode.name, '=\'', attrNode.value, '\'');
+          }
+        }
+        if (node.hasChildNodes()) {
+          output.push('>');
+          var childNodes = node.childNodes;
+          for (var i = 0, len = childNodes.length; i < len; ++i) {
+            serializeXML(childNodes.item(i), output);
+          }
+          output.push('</', node.tagName, '>');
+        } else {
+          output.push('/>');
+        }
+      } else if (nodeType == 8) {
+        // TODO(codedread): Replace special characters with XML entities?
+        output.push('<!--', node.nodeValue, '-->');
+      } else {
+        // TODO: Handle CDATA nodes.
+        // TODO: Handle ENTITY nodes.
+        // TODO: Handle DOCUMENT nodes.
+        throw 'Error serializing XML. Unhandled node of type: ' + nodeType;
+      }
+    }
+
+    var output = [];
+    var childNode = svg.firstChild;
+    while (childNode) {
+      serializeXML(childNode, output);
+      childNode = childNode.nextSibling;
+    }
+
+    return '<svg xmlns="' + svg.attributes.xmlns.value + '" width="' + 
+      svg.attributes.width.value + '" height="' + svg.attributes.height.value +
+      '">' + output.join('') + '</svg>';
   }
 };
 
@@ -157,7 +244,7 @@ PxVisBehaviorD3.axes = {
      * @property x
      * @type Object
      */
-    x:{
+    x: {
       type: Object,
       notify:true
     },
@@ -171,7 +258,7 @@ PxVisBehaviorD3.axes = {
      * @property y
      * @type Object
      */
-    y:{
+    y: {
       type: Object,
       notify:true
     },
@@ -183,7 +270,7 @@ PxVisBehaviorD3.axes = {
      * @property currentDomainX
      * @type Array
      */
-    currentDomainX:{
+    currentDomainX: {
       type:Array,
       notify:true
     },
@@ -195,7 +282,7 @@ PxVisBehaviorD3.axes = {
      * @property currentDomainY
      * @type Array
      */
-    currentDomainY:{
+    currentDomainY: {
       type:Array,
       notify:true
     }
@@ -226,7 +313,7 @@ PxVisBehaviorD3.axis = {
      * @property axis
      * @type Object
      */
-    axis:{
+    axis: {
       type: Object,
       value: {},
       notify: true
@@ -239,7 +326,7 @@ PxVisBehaviorD3.axis = {
      * @property currentDomain
      * @type Object
      */
-    currentDomain:{
+    currentDomain: {
       type:Array,
       notify:true
     },
@@ -254,7 +341,7 @@ PxVisBehaviorD3.axis = {
      * @type String
      * @default bottom
      */
-    orientation:{
+    orientation: {
       type: String,
       value: 'bottom',
     }
@@ -283,7 +370,7 @@ PxVisBehaviorD3.selectedDomain = {
      * @property selectedDomain
      * @type Object
      */
-    selectedDomain:{
+    selectedDomain: {
       type:Object,
       value: function() {
         return {x:[], y:[]};
@@ -292,6 +379,88 @@ PxVisBehaviorD3.selectedDomain = {
     }
   }
 };
+
+/*
+    Name:
+    PxVisBehaviorD3.selectedTimeDomain
+
+    Description:
+    Polymer behavior that provides the ability to use px-datetime (px-rangepicker) to drive the selection
+    of a time domain in a px-vis time based chart
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehaviorD3.selectedTimeDomain
+*/
+PxVisBehaviorD3.selectedTimeDomain = [{
+  properties: {
+    /**
+     * Range object defining the time span
+     *   * Format ISO8601 strings
+     * ```
+     * {
+     *    "from": "2013-01-07T22:44:30.652Z",
+     *    "to" : "2013-02-04T22:44:30.652Z"
+     * }
+     * ```
+     * 
+     * Updates and is updated by SelectedDomain
+     * 
+     */
+    range: {
+      type: Object,
+      notify: true
+    },
+    _preventDomainUpdate: {
+      type: Boolean,
+      value: false
+    },
+    _preventRangeUpdate: {
+      type: Boolean,
+      value: false
+    }
+  },
+  observers: ['_rangeChanged(range)',
+            '_selectedDomainChanged(selectedDomain)'],
+  attached: function() {
+    this._isAttached = true;
+  },
+  _rangeChanged: function(range) {
+    if(this._isAttached && !this._preventRangeUpdate) {
+      //update selectedDomain with those new values
+      //make sure we don't trigger a domain update when changing it from here
+      this._preventDomainUpdate = true;
+
+      var newDomain = {};
+      newDomain.y = this.selectedDomain.y;
+      newDomain.x = [];
+      newDomain.x[0] = Px.moment(range.from).valueOf();
+      newDomain.x[1] = Px.moment(range.to).valueOf();
+
+      this.set('selectedDomain', newDomain);
+
+      this._preventDomainUpdate = false;
+    }
+
+  },
+  _selectedDomainChanged: function(selectedDomain) {
+    if(this._isAttached && !this._preventDomainUpdate) {
+      //update selectedDomain with those new values
+      //make sure we don't trigger a domain update when changing it from here
+      this._preventRangeUpdate = true;
+
+      var newRange = {};
+      newRange.from = Px.moment(this.selectedDomain.x[0]).toISOString();
+      newRange.to = Px.moment(this.selectedDomain.x[1]).toISOString();
+
+      this.set('range', newRange);
+
+      this._preventRangeUpdate = false;
+    }
+  }
+  
+}, PxVisBehaviorD3.selectedDomain];
 
 /*
     Name:
@@ -315,7 +484,7 @@ PxVisBehaviorD3.interaction = {
      * @property interactionSvg
      * @type Object
      */
-    interactionSvg:{
+    interactionSvg: {
       type: Object
     }
   }
@@ -357,7 +526,7 @@ PxVisBehaviorD3.clipPath = {
    *
    * @method addClipPath
    */
-  addClipPath: function(elem){
+  addClipPath: function(elem) {
     if(typeof(this.clipPath) !== 'undefined' && !this._isObjEmpty(elem)){
       elem.attr("clip-path", 'url(#' + this.clipPath + ')');
     }

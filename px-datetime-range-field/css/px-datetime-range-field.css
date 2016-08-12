@@ -961,3 +961,6 @@ textarea {
 
 .validation-container__icon--failed {
   color: #e53838; }
+
+.to {
+  color: var(--px-datetime-range-field-to-color, black); }
