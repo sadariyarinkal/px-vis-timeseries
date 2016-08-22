@@ -734,7 +734,7 @@ a {
       -ms-flex: none !important;
           flex: none !important; }
 
-@media screen and (max-width: 47.9375rem) {
+@media screen and (max-width: 47.9rem) {
   .u-1\/1-palm {
     width: 100% !important; }
   .u-1\/2-palm {
@@ -793,7 +793,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 48rem) and (max-width: 68.204166667rem) {
+@media screen and (min-width: 48rem) and (max-width: 63.9rem) {
   .u-1\/1-lap {
     width: 100% !important; }
   .u-1\/2-lap {
@@ -911,7 +911,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (max-width: 68.2rem) {
+@media screen and (max-width: 63.9rem) {
   .u-1\/1-portable {
     width: 100% !important; }
   .u-1\/2-portable {
@@ -970,7 +970,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 68.266666667rem) {
+@media screen and (min-width: 63.9rem) {
   .u-1\/1-desk {
     width: 100% !important; }
   .u-1\/2-desk {
@@ -1029,7 +1029,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 80rem) {
+@media screen and (min-width: 100%) {
   .u-1\/1-desk-wide {
     width: 100% !important; }
   .u-1\/2-desk-wide {

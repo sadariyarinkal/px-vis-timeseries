@@ -1,3 +1,11 @@
+v0.7.7
+=================
+* Added tooltipParent property definition
+
+v0.7.6
+=================
+* added overflow to demoContainer and removed flex__wrap from mega-demo
+
 v0.7.5
 =================
 * updated mega demo styles and bower px-demo-snippet to ^

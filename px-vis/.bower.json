@@ -1,6 +1,6 @@
 {
   "name": "px-vis",
-  "version": "0.1.18",
+  "version": "0.1.22",
   "main": [
     "px-vis.html"
   ],
@@ -41,11 +41,11 @@
     "numbro": "1.7.1"
   },
   "homepage": "https://github.com/PredixDev/px-vis",
-  "_release": "0.1.18",
+  "_release": "0.1.22",
   "_resolution": {
     "type": "version",
-    "tag": "v0.1.18",
-    "commit": "6af1dd288d1812e7fbaca5e4ce3725f8928ca517"
+    "tag": "v0.1.22",
+    "commit": "436f6e5fd7fb589161b984c016b2b65a1ae411fe"
   },
   "_source": "https://github.com/PredixDev/px-vis.git",
   "_target": "~0.1.0",

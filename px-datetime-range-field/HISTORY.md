@@ -1,3 +1,11 @@
+v0.3.14
+==================
+* changed moment.tz to Px.moment.tz in tests
+
+v0.3.13
+==================
+* added overflow to demoContainer and removed flex__wrap from mega-demo
+
 v0.3.12
 ==================
 * updated mega demo styles and bower px-demo-snippet to ^

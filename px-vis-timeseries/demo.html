@@ -1,5 +1,13 @@
 <!DOCTYPE html><html><head><!--
 @license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+--><!--
+@license
 Copyright (c) 2015 The Polymer Project Authors. All rights reserved.
 This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
 The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
@@ -769,7 +777,7 @@ a {
       -ms-flex: none !important;
           flex: none !important; }
 
-@media screen and (max-width: 47.9375rem) {
+@media screen and (max-width: 47.9rem) {
   .u-1\/1-palm {
     width: 100% !important; }
   .u-1\/2-palm {
@@ -828,7 +836,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 48rem) and (max-width: 68.204166667rem) {
+@media screen and (min-width: 48rem) and (max-width: 63.9rem) {
   .u-1\/1-lap {
     width: 100% !important; }
   .u-1\/2-lap {
@@ -946,7 +954,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (max-width: 68.2rem) {
+@media screen and (max-width: 63.9rem) {
   .u-1\/1-portable {
     width: 100% !important; }
   .u-1\/2-portable {
@@ -1005,7 +1013,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 68.266666667rem) {
+@media screen and (min-width: 63.9rem) {
   .u-1\/1-desk {
     width: 100% !important; }
   .u-1\/2-desk {
@@ -1064,7 +1072,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 80rem) {
+@media screen and (min-width: 100%) {
   .u-1\/1-desk-wide {
     width: 100% !important; }
   .u-1\/2-desk-wide {
@@ -11593,6 +11601,35 @@ PxVisBehavior.mutedSeries = {
 
 /*
     Name:
+    PxVisBehavior.progressiveRendering
+
+    Description:
+    Polymer behavior that provides canvas progressive rendering options
+
+    Dependencies:
+    -
+
+    @polymerBehavior PxVisBehavior.progressiveRendering
+*/
+PxVisBehavior.progressiveRendering = {
+  properties: {
+    /**
+    * By default the lines are rendered progressively for a better user experience.
+    * However this can have a performance impact, minimal on chrome (+15% rendering 
+    * time) but important on IE (+200% rendering time...)
+    * Use this to prevent progressive rendering if you plan rendering a lot fo <datalist>
+    * and using IE
+    */
+    noCanvasProgressiveRendering: {
+      type: Boolean,
+      value: false
+    }
+  }
+};
+
+
+/*
+    Name:
     PxVisBehavior.tooltipData
 
     Description:
@@ -12280,38 +12317,89 @@ PxVisBehaviorD3.svg = {
   /**
    * Draws the current svg into a canvas
    */
-  _drawSVGOnCanvas: function(canvas, callback) {
+  _drawSVGOnCanvas: function(canvas, callback, x, y) {
     var svgData = this.pxSvgElem.outerHTML;
+    x = x ? x : 0;
+    y = y ? y : 0;
 
     //stupid IE can't get outerHTML of svg even though it's now a W3C spec
     if(!svgData) {
       svgData = this._getSVGOuterHtml(this.pxSvgElem);
     }
-    
-    //this would be the "native" way to do it. Axes are rendered slightly sharper,
-    //but labels seem to be slightly cut off. Not investigating it for now and
-    //falling back on canvg because of IE anyway
-    // var DOMURL = window.URL || window.webkitURL || window,
-    //     img = new Image(),
-    //     blob,
-    //     url;
-    // blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'}),
-    // url = DOMURL.createObjectURL(blob);
 
-    // img.crossOrigin="Anonymous";
-    // img.onload = function() {
-    //     context.drawImage(img, 0, 0);
-    //     DOMURL.revokeObjectURL(blob);
-    // }
-    // img.src = url;
+    //check if drawing an svg on canvas is ok
+    var smallSvg = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><div></div></svg>',
+        testCanvas = document.createElement('canvas'),
+        successLoadImage,
+        failureLoadImage;
 
-    //because IE 10/11 automatically taints any canvas where an SVG image has been
-    //drawn we need to use a third party to interprete the image in javascript
-    //instructions for the canvas
-    canvg(canvas, svgData, {ignoreDimensions: true, 
-                            ignoreClear: true, 
-                            renderCallback: callback,
-                            resultCanvas: canvas});
+    failureLoadImage = function() {
+
+      //fallback on canvg
+      this._drawCanvg(canvas, svgData, x, y, function() {
+        callback(this.resultCanvas);
+      });
+    }.bind(this);
+
+    successLoadImage = function(testedCanvas) {
+
+      //image has been loaded successfully on canvas, now test if it has been tainted
+      try {
+        testedCanvas.toDataURL();
+
+        //ok no error were thrown, we can proceed
+        this._nativeDrawSvgOnCanvas(canvas, svgData, x, y, function() {
+          callback(canvas);
+        });
+      } catch(err) {
+
+        //fallback on canvg
+        this._drawCanvg(canvas, svgData, x, y, function() {
+          callback(this.resultCanvas);
+        });
+      }
+    }.bind(this);
+
+    this._nativeDrawSvgOnCanvas(testCanvas, smallSvg, x, y, successLoadImage, failureLoadImage);
+  },
+  /**
+   * Uses canvg third party to "translate" svg to javascript instructions
+   * for the canvas, and draw on the canvas
+   */
+  _drawCanvg: function(canvas, svgData, x, y, callback) {
+    var options = {ignoreDimensions: true, 
+                  ignoreClear: true, 
+                  renderCallback: callback,
+                  offsetX: x,
+                  offsetY: y,
+                  resultCanvas: canvas};
+    canvg(canvas, svgData, options);
+  },
+  /**
+   * 
+   */
+  _nativeDrawSvgOnCanvas: function(canvas, svgData, x, y, sucessCallback, failureCallback) {
+    //detect canvas tainting failures
+
+      var DOMURL = window.URL || window.webkitURL || window,
+          blob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'}),
+          url = DOMURL.createObjectURL(blob),
+          img = new Image();
+
+      //once svg has been loaded
+      img.onload = function() {
+        canvas.getContext('2d').drawImage(img, x, y);
+        DOMURL.revokeObjectURL(url);
+
+        sucessCallback(canvas);
+      };
+
+      //Safari...
+      img.onerror = function(err) {
+        failureCallback(canvas);
+      }.bind(this);
+
+      img.src = url;
   },
 
   _getSVGOuterHtml: function(svg) {
@@ -13197,12 +13285,12 @@ PxVisBehaviorChart.saveImage = {
       }
 
       if(this.pxSvgElem) {
-        this._drawSVGOnCanvas(canvas, function() {
-          callback({canvas: this.resultCanvas, image: this.resultCanvas.toDataURL()});
+        this._drawSVGOnCanvas(canvas, function(resultCanvas) {
+          callback({canvas: resultCanvas, image: resultCanvas.toDataURL()});
         });
       }
     }
-}
+};
 /*
     Name:
     PxVisBehaviorChart.precipitationPattern
@@ -13297,6 +13385,30 @@ PxVisBehaviorChart.precipitationPattern = {
     }
   }
 
+};
+
+/**
+    Name:
+    PxVisBehaviorChart.chartAutoResize
+
+    Description:
+    Polymer behavior that provides auto resize options for charts
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehaviorChart.chartAutoResize
+*/
+PxVisBehaviorChart.chartAutoResize = {
+    properties: {
+      /**
+      * Prevents the chart from automatically resizing to fit its container
+      */
+      preventResize: {
+        type: Boolean,
+        value: false
+      }
+    }
 };
 </script>
 <script>
@@ -18692,6 +18804,7 @@ button.btn {
       PxVisBehavior.completeSeriesConfig,
       PxVisBehavior.categories,
       PxVisBehaviorD3.selectedDomain,
+      PxVisBehavior.progressiveRendering,
       commonColors
     ],
 
@@ -18789,6 +18902,13 @@ button.btn {
          type: Boolean,
          value: false
        },
+       /**
+        * Counter to track progressive rendering requests and only draw the latest one
+        */
+       _progressiveRenderingCounter: {
+         type: Number,
+         value: 0
+       }
     },
 
     observers: [
@@ -18873,7 +18993,7 @@ button.btn {
             //for each datapoint, iterate through the dimensions
             return path(dims.map(function(p) {
               //check that we have data; if not, return false so it doesnt draw a line
-              if(!d[p]){
+              if(!d[p]) {
                 return false
               }
               //return [x,y] to path: x is ordinal based on dim; get the y-scale for the dim and use that particular scale on the data
@@ -18986,10 +19106,14 @@ button.btn {
           //Render data progressively
           this.canvasContext.lineWidth = 1;
 
-          //TODO: choose number of frames depending on data size? First render in 1 frame?
-          this._renderProgressively(data, 5);
+          if(this.noCanvasProgressiveRendering) {
+            this._renderAtOnce(data);
+          } else {
+            //render 1000 points at a time or 5 frames min
+            var frames = Math.max(data.length/1000, 5);
+            this._renderProgressively(data, frames);
+          }
           
-          // make sure they are only drawn to the chart area and not the rest of the frame: equivalent to the clipPath for SVG
           this.canvasContext._pxLinesRedraw += 1;
         }
       },20);
@@ -19004,12 +19128,70 @@ button.btn {
       this.addClipPath(this.lineGroup);
     },
 
+    _renderAtOnce: function(data) {
+
+      //data format
+      if(!this.parallelCoordinates) {
+        data = [data];
+      }
+
+      if(this.gradientLine) {  
+        //if gradient, regardless of category or not
+        // Iterate over our data:
+        for(var i = 0; i < data.length; i++) {
+          // Check to see if it is "muted"; if not, draw a line
+          if(!this.mutedSeries[data[i][this.seriesId]]) {
+
+            // start a path and reset the styles for this one path
+            this.canvasContext.beginPath();
+            this.canvasContext.strokeStyle = this._canvasLineColor(data[i],this._opacityLine(data[i]));
+            // use the line generator to create the line
+            this.line(data[i]);
+            // draw it to the canvas; cant wait until the end or else they all have the same style
+            this.canvasContext.stroke();
+          }
+        }
+      // if categoryKey and no gradient
+      } else if(this.categoryKey) {
+        // Yes, this repeates the if above but I dont really want it checking an if 20k times to see if it should apply a gradient or not.
+        // Iterate over our data:
+        for(var i = 0; i < data.length; i++){
+          // Check to see if it is "muted"; if not, draw a line
+          if(!this.mutedSeries[data[i][this.seriesId]]){
+            // start a path and reset the styles for this one path
+            this.canvasContext.beginPath();
+            this.canvasContext.strokeStyle = this._canvasLineColor(data[i],1);
+            // use the line generator to create the line
+            this.line(data[i]);
+            // draw it to the canvas; cant wait until the end or else they all have the same style
+            this.canvasContext.stroke();
+          }
+        }
+      } else { //not gradientLine and not category
+        // start the path
+        this.canvasContext.beginPath();
+        // iterate through the data
+        for(var i = 0; i < data.length; i++){
+          // if the series is not listed or it is false, draw it
+          if(!this.mutedSeries[data[i][this.seriesId]]){
+            this.line(data[i]);
+          }
+          // Apply our styles and draw all the lines to the canvas
+          this.canvasContext.strokeStyle = this.completeSeriesConfig[this.seriesId]['color'];
+          
+        }
+        this.canvasContext.stroke();
+        //clean up drawing
+        this._clearCanvasMargins();
+      }
+    },
+
     /**
      * Renders data in a specific number of frames, splitting the batch
      * 
      */
     _renderProgressively: function(data, numberOfFrames) {
-      //split data in 10 batches
+
         var batches = [],
             currentIndex = 0,
             j = 0,
@@ -19022,7 +19204,15 @@ button.btn {
               || window.msRequestAnimationFrame
               || function(callback) { setTimeout(callback, 17); },
             getColorValue,
-            processFunction;
+            processFunction,
+            currentRenderingCounter;
+      
+      //new request
+      this._progressiveRenderingCounter++;
+      currentRenderingCounter = this._progressiveRenderingCounter;
+
+      //make sure canvas is clean
+      this.canvasContext.clearRect(0, -1, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
       
       if(this.parallelCoordinates) {
         //split the data in the number of frames desired
@@ -19044,6 +19234,12 @@ button.btn {
       //because of the color/gradient we have 1 stroke per line
       var processColoredDataSlice = function() {
 
+        if(currentRenderingCounter !== _this._progressiveRenderingCounter) {
+          //new request came in, cancel this drawing. Don't reset the counter as we want 
+          //the new request to finish
+          return;
+        } 
+
         var d = batches[currentIndex];
         for(var i = 0; i < d.length; i++) {
           if(!_this.mutedSeries[d[i][_this.seriesId]]) {
@@ -19055,13 +19251,24 @@ button.btn {
         }
 
         currentIndex++;
+
         if(currentIndex < numberOfFrames) {
+          //continue processing
           timer(processColoredDataSlice);
+        } else {
+          //finished drawing, reset drawing request counter
+          _this._progressiveRenderingCounter = 0;
         }
       };
 
       //all  lines in 1 stroke
       var processGenericDataSlice = function() {
+
+        if(currentRenderingCounter !== _this._progressiveRenderingCounter) {
+          //new request came in, cancel this drawing. Don't reset the counter as we want 
+          //the new request to finish
+          return;
+        }
 
         var d = batches[currentIndex];
         _this.canvasContext.beginPath();
@@ -19075,13 +19282,14 @@ button.btn {
         _this.canvasContext.stroke();
 
         currentIndex++;
+
         if(currentIndex < numberOfFrames) {
+          //continue processing
           timer(processGenericDataSlice);
         } else {
-          //TODO: fix properly so we use some kind of margin
-          _this.canvasContext.clearRect(0, -1, _this.canvasContext.canvas.width, -30);
-          _this.canvasContext.clearRect(0, _this.canvasContext.canvas.height - 65, _this.canvasContext.canvas.width, 65);
-          _this.canvasContext.clearRect(0, -30, -50, _this.canvasContext.canvas.height + 30);
+          //end, clean up
+          _this._clearCanvasMargins();
+          this._progressiveRenderingCounter = 0;
         }
       };
       //END PROCESSING FUNCTIONS
@@ -19106,7 +19314,16 @@ button.btn {
       
       timer(processFunction);
     },
-
+    /**
+     * Used to 'clear' the canvas fater drawing in case we drew outside our limits. 
+     * We might want to consider using a clippath instead
+     */
+    _clearCanvasMargins: function() {
+      //TODO: fix properly so we use some kind of margin
+      this.canvasContext.clearRect(0, -1, this.canvasContext.canvas.width, -30);
+      this.canvasContext.clearRect(0, this.canvasContext.canvas.height - 65, this.canvasContext.canvas.width, 65);
+      this.canvasContext.clearRect(0, -30, -50, this.canvasContext.canvas.height + 30);
+    },
     /**
      * Checks mutedSeries to see if this ID is in there
      * Called from an observer watching mutedSeries
@@ -22672,7 +22889,7 @@ div#carat {
         value: false
       },
       /**
-       * This is a private property, which is activates if the user hovers OFF the target element.
+       * This is a private property, which activates if the user hovers OFF the target element.
        *
        * @property _cancel
        * @type Boolean
@@ -22681,6 +22898,16 @@ div#carat {
       _cancel: {
         type: Boolean,
         value: false
+      },
+      /**
+       * An object referring to the tooltip's parent element.
+       * @property tooltipParent
+       * @type Object
+       * @default {}
+       */
+      _tooltipParent: {
+        type: Object,
+        value: function() {return {};}
       }
     },
     listeners: {
@@ -22790,7 +23017,7 @@ div#carat {
           // and toggle that class on, to ensure we don't have 2 tooltips in the dom root at once.
           Polymer.dom(_this).classList.toggle('movedTooltip');
           // we also want to remember where this tooltip was placed originally.
-          _this.set('tooltipParent', _this.parentNode);
+          _this.set('_tooltipParent', _this.parentNode);
           // now that we are all set, we move the tooltip to the dom root, where the absolute positioning works everytime,
           // and we don't have to worry about overflows, the scourge of css.
           document.body.appendChild(tooltip);
@@ -22825,7 +23052,7 @@ div#carat {
         //get rid of out movedTooltip class
         Polymer.dom(this).classList.toggle('movedTooltip');
         //and we move the tooltip back to whence it came.
-        this.tooltipParent.appendChild(this);
+        this._tooltipParent.appendChild(this);
         this.$.tooltipWrapper.classList.add('hidden');
         this._isShowing = false;
       }
@@ -31181,7 +31408,8 @@ button.btn {
           PxVisBehaviorChart.chartCommon,
           PxVisBehaviorChart.precipitationPattern,
           Polymer.IronResizableBehavior,
-          PxVisBehaviorChart.saveImage
+          PxVisBehaviorChart.saveImage,
+          PxVisBehaviorChart.chartAutoResize
         ],
 
         /**
@@ -31264,10 +31492,12 @@ button.btn {
         },
         _onIronResize: function() {
           this.debounce('ironresize', function() {
-            var wrapperRect = this.$.wrapper.getBoundingClientRect();
+            if(!this.preventResize) {
+              var wrapperRect = this.$.wrapper.getBoundingClientRect();
 
-            this.set('width', wrapperRect.width);
-            this.set('height', wrapperRect.height);
+              this.set('width', wrapperRect.width);
+              this.set('height', wrapperRect.height);
+            }
           },100);
         },
         _rangeChanged: function() {
@@ -31295,11 +31525,11 @@ button.btn {
               "y":[Infinity,-Infinity]});
 
           } else {
-
+            var config = this.seriesConfig[Object.keys(this.seriesConfig)[0]];
             //if we're using dummy data make sure it reflects the new range
             if(this.chartData.length === 2 && this.chartData[0][config.y] === 0 && 
               this.chartData[1][config.y] === 0) {
-              this._updateDummyData();
+              this._updateDummyData(newXRange);
             }
             
             //set range in the data
@@ -41783,7 +42013,7 @@ a {
       -ms-flex: none !important;
           flex: none !important; }
 
-@media screen and (max-width: 47.9375rem) {
+@media screen and (max-width: 47.9rem) {
   .u-1\/1-palm {
     width: 100% !important; }
   .u-1\/2-palm {
@@ -41842,7 +42072,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 48rem) and (max-width: 68.204166667rem) {
+@media screen and (min-width: 48rem) and (max-width: 63.9rem) {
   .u-1\/1-lap {
     width: 100% !important; }
   .u-1\/2-lap {
@@ -41960,7 +42190,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (max-width: 68.2rem) {
+@media screen and (max-width: 63.9rem) {
   .u-1\/1-portable {
     width: 100% !important; }
   .u-1\/2-portable {
@@ -42019,7 +42249,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 68.266666667rem) {
+@media screen and (min-width: 63.9rem) {
   .u-1\/1-desk {
     width: 100% !important; }
   .u-1\/2-desk {
@@ -42078,7 +42308,7 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-@media screen and (min-width: 80rem) {
+@media screen and (min-width: 100%) {
   .u-1\/1-desk-wide {
     width: 100% !important; }
   .u-1\/2-desk-wide {
@@ -42440,6 +42670,16 @@ a {
             notify: true,
             value: false
           },
+          /**
+           * Boolean to enable or disable auto-resizing
+           *
+           * @property preventResize
+           * @type Boolean
+           */
+          preventResize: {
+            type: Boolean,
+            value: false
+          },
           pxSvgElem : {
             type: Object,
             value: function() { return {};}
@@ -42507,6 +42747,9 @@ a {
           });
         },
         _onIronResize: function() {
+          if(this.preventResize) {
+            return;
+          }
           this.debounce('ironresize', function() {
             var wrapperRect = this.$.wrapper.getBoundingClientRect(),
                 navigatorRect = this.$.navigator.getBoundingClientRect(),
@@ -42527,7 +42770,7 @@ a {
 
             this.set('width', wrapperRect.width - widthDeduct);
             this.set('height', wrapperRect.height - heightDeduct);
-          
+
           },50);
         },
         /**
@@ -42551,7 +42794,16 @@ a {
         }
     });
 </script>
-<script>function MakePromise (asap) {
+<script>/**
+@license
+Copyright (c) 2016 The Polymer Project Authors. All rights reserved.
+This code may only be used under the BSD style license found at http://polymer.github.io/LICENSE.txt
+The complete set of authors may be found at http://polymer.github.io/AUTHORS.txt
+The complete set of contributors may be found at http://polymer.github.io/CONTRIBUTORS.txt
+Code distributed by Google as part of the polymer project is also
+subject to an additional IP rights grant found at http://polymer.github.io/PATENTS.txt
+*/
+function MakePromise (asap) {
   function Promise(fn) {
 		if (typeof this !== 'object' || typeof fn !== 'function') throw new TypeError();
 		this._state = null;
@@ -42686,7 +42938,7 @@ if (!window.Promise) {
 }
 </script>
 <script>
-  'use strict';
+  'use strict'
 
   Polymer({
     is: 'iron-request',
@@ -42838,9 +43090,6 @@ if (!window.Promise) {
     /**
      * Sends an HTTP request to the server and returns the XHR object.
      *
-     * The handling of the `body` parameter will vary based on the Content-Type
-     * header. See the docs for iron-ajax's `body` param for details.
-     *
      * @param {{
      *   url: string,
      *   method: (string|undefined),
@@ -42853,7 +43102,7 @@ if (!window.Promise) {
      *     url The url to which the request is sent.
      *     method The HTTP method to use, default is GET.
      *     async By default, all requests are sent asynchronously. To send synchronous requests,
-     *         set to false.
+     *         set to true.
      *     body The content for the request body for POST method.
      *     headers HTTP request headers.
      *     handleAs The response type. Default is 'text'.
@@ -42893,16 +43142,17 @@ if (!window.Promise) {
         this.rejectCompletes(new Error('Request aborted.'));
       }.bind(this));
 
+
       // Called after all of the above.
       xhr.addEventListener('loadend', function () {
         this._updateStatus();
-        this._setResponse(this.parseResponse());
 
         if (!this.succeeded) {
           this.rejectCompletes(new Error('The request failed with status code: ' + this.xhr.status));
           return;
         }
 
+        this._setResponse(this.parseResponse());
         this.resolveCompletes(this);
       }.bind(this));
 
@@ -42932,7 +43182,7 @@ if (!window.Promise) {
       }
       Object.keys(headers).forEach(function (requestHeader) {
         if (/[A-Z]/.test(requestHeader)) {
-          Polymer.Base._error('Headers must be lower case, got', requestHeader);
+          console.error('Headers must be lower case, got', requestHeader);
         }
         xhr.setRequestHeader(
           requestHeader,
@@ -42941,10 +43191,6 @@ if (!window.Promise) {
       }, this);
 
       if (options.async !== false) {
-        if (options.async) {
-          xhr.timeout = options.timeout;
-        }
-
         var handleAs = options.handleAs;
 
         // If a JSON prefix is present, the responseType must be 'text' or the
@@ -42964,7 +43210,7 @@ if (!window.Promise) {
       }
 
       xhr.withCredentials = !!options.withCredentials;
-
+      xhr.timeout = options.timeout;
 
       var body = this._encodeBodyObject(options.body, headers['content-type']);
 
@@ -43092,9 +43338,6 @@ if (!window.Promise) {
     _wwwFormUrlEncodePiece: function(str) {
       // Spec says to normalize newlines to \r\n and replace %20 spaces with +.
       // jQuery does this as well, so this is likely to be widely compatible.
-      if (str === null) {
-        return '';
-      }
       return encodeURIComponent(str.toString().replace(/\r?\n/g, '\r\n'))
           .replace(/%20/g, '+');
     },
@@ -43109,6 +43352,7 @@ if (!window.Promise) {
   });
 </script>
 
+
 <script>
   'use strict';
 
@@ -43120,21 +43364,18 @@ if (!window.Promise) {
      * Fired when a request is sent.
      *
      * @event request
-     * @event iron-ajax-request
      */
 
     /**
      * Fired when a response is received.
      *
      * @event response
-     * @event iron-ajax-response
      */
 
     /**
      * Fired when an error is received.
      *
      * @event error
-     * @event iron-ajax-error
      */
 
     hostAttributes: {
@@ -43196,8 +43437,6 @@ if (!window.Promise) {
        * Content type to use when sending data. If the `contentType` property
        * is set and a `Content-Type` header is specified in the `headers`
        * property, the `headers` property value will take precedence.
-       *
-       * Varies the handling of the `body` param.
        */
       contentType: {
         type: String,
@@ -43376,21 +43615,6 @@ if (!window.Promise) {
         value: ''
       },
 
-      /**
-       * By default, iron-ajax's events do not bubble. Setting this attribute will cause its
-       * request and response events as well as its iron-ajax-request, -response,  and -error
-       * events to bubble to the window object. The vanilla error event never bubbles when
-       * using shadow dom even if this.bubbles is true because a scoped flag is not passed with
-       * it (first link) and because the shadow dom spec did not used to allow certain events,
-       * including events named error, to leak outside of shadow trees (second link).
-       * https://www.w3.org/TR/shadow-dom/#scoped-flag
-       * https://www.w3.org/TR/2015/WD-shadow-dom-20151215/#events-that-are-not-leaked-into-ancestor-trees
-       */
-      bubbles: {
-        type: Boolean,
-        value: false
-      },
-
       _boundHandleResponse: {
         type: Function,
         value: function() {
@@ -43441,14 +43665,13 @@ if (!window.Promise) {
      */
     get requestUrl() {
       var queryString = this.queryString;
-      var url = this.url || '';
 
       if (queryString) {
-        var bindingChar = url.indexOf('?') >= 0 ? '&' : '?';
-        return url + bindingChar + queryString;
+        var bindingChar = this.url.indexOf('?') >= 0 ? '&' : '?';
+        return this.url + bindingChar + queryString;
       }
 
-      return url;
+      return this.url;
     },
 
     /**
@@ -43515,7 +43738,7 @@ if (!window.Promise) {
       var request = /** @type {!IronRequestElement} */ (document.createElement('iron-request'));
       var requestOptions = this.toRequestOptions();
 
-      this.push('activeRequests', request);
+      this.activeRequests.push(request);
 
       request.completes.then(
         this._boundHandleResponse
@@ -43533,12 +43756,7 @@ if (!window.Promise) {
       this.fire('request', {
         request: request,
         options: requestOptions
-      }, {bubbles: this.bubbles});
-
-      this.fire('iron-ajax-request', {
-        request: request,
-        options: requestOptions
-      }, {bubbles: this.bubbles});
+      }, {bubbles: false});
 
       return request;
     },
@@ -43549,44 +43767,33 @@ if (!window.Promise) {
         this._setLastError(null);
         this._setLoading(false);
       }
-      this.fire('response', request, {bubbles: this.bubbles});
-      this.fire('iron-ajax-response', request, {bubbles: this.bubbles});
+      this.fire('response', request, {bubbles: false});
     },
 
     _handleError: function(request, error) {
       if (this.verbose) {
-        Polymer.Base._error(error);
+        console.error(error);
       }
 
       if (request === this.lastRequest) {
         this._setLastError({
           request: request,
-          error: error,
-          status: request.xhr.status,
-          statusText: request.xhr.statusText,
-          response: request.xhr.response
+          error: error
         });
         this._setLastResponse(null);
         this._setLoading(false);
       }
-
-      // Tests fail if this goes after the normal this.fire('error', ...)
-      this.fire('iron-ajax-error', {
-        request: request,
-        error: error
-      }, {bubbles: this.bubbles});
-
       this.fire('error', {
         request: request,
         error: error
-      }, {bubbles: this.bubbles});
+      }, {bubbles: false});
     },
 
     _discardRequest: function(request) {
       var requestIndex = this.activeRequests.indexOf(request);
 
       if (requestIndex > -1) {
-        this.splice('activeRequests', requestIndex, 1);
+        this.activeRequests.splice(requestIndex, 1);
       }
     },
 

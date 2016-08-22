@@ -1,3 +1,21 @@
+v0.1.22
+==================
+* Make sure progressive rendering is cancelled on new drawing request
+
+v0.1.21
+==================
+* Added preventResize option for chart auto resize. 
+* Added option to prevent progressive rendering for canvas (preventCanvasProgressiveRendering)
+* Make export to png dynamically choose between native and canvg (hence fixing it on edge)
+
+v0.1.20
+==================
+* Fix bug in empty navigator
+
+v0.1.19
+==================
+* Fixing color issue in pie
+
 v0.1.18
 ==================
 * Adding support to export chart components to images
