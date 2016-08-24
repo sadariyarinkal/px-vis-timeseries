@@ -1,10 +1,26 @@
+v0.1.26
+==================
+* Many changes associated with enabling mute / unmute on parallel coords
+
+v0.1.25
+==================
+* Added support for units in axis labels
+
+v0.1.24
+==================
+* Fixed bug in axis brush where the array declaration is wrong
+
+v0.1.23
+==================
+* Adding truncation to axis labels
+
 v0.1.22
 ==================
 * Make sure progressive rendering is cancelled on new drawing request
 
 v0.1.21
 ==================
-* Added preventResize option for chart auto resize. 
+* Added preventResize option for chart auto resize.
 * Added option to prevent progressive rendering for canvas (preventCanvasProgressiveRendering)
 * Make export to png dynamically choose between native and canvg (hence fixing it on edge)
 

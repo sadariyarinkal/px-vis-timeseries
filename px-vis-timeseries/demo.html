@@ -11310,7 +11310,8 @@ PxVisBehavior.sizing = {
     *
     */
     width: {
-      type: Number
+      type: Number,
+      notify: true
     },
 
     /**
@@ -11319,6 +11320,7 @@ PxVisBehavior.sizing = {
     */
     height: {
       type: Number,
+      notify: true
     },
 
     /**
@@ -11327,6 +11329,7 @@ PxVisBehavior.sizing = {
     */
     margin:{
       type:Object,
+      notify: true,
       value: function() {
         return {
           left: 0,
@@ -11336,6 +11339,72 @@ PxVisBehavior.sizing = {
         };
       }
     }
+  }
+};
+
+/*
+    Name:
+    PxVisBehavior.truncating
+
+    Description:
+    Polymer behavior that provides the string truncation method
+
+    @polymerBehavior PxVisBehavior.truncating
+*/
+PxVisBehavior.truncating = {
+  properties: {
+    /**
+     * Defines if the label should get truncated and to how many characters.
+     *
+     * Default length is 10 characters, not including the ellipsis which gets inserted.
+     *
+     * The length must be at least 2.
+     *
+     * To disable truncation, set the value to -1
+     *
+     * @property truncationLength
+     * @type Number
+     * @default 10
+    */
+    truncationLength: {
+      type: Number,
+      value: 10
+    },
+  },
+  /**
+   * _truncateName takes a string and string length [optional].
+   * Returns a truncated string with the middle replaced by an ellipsis. The ellipsis does not count towards the total character count.
+   * Follows these truncation principles: http://www.gesdh.com/predix/product/principles/truncation/
+   * Example: LNG_BAH_HOT_EFFECTIVENESS_CORE8 --> LNG_B...CORE8
+   *
+   * Length cannot be less than 2 characters.
+   * Default length is 10 characters.
+   *
+   * If the string is less than or equal to the length or the length is invalid, returns the original string.
+   *
+   * @param {String} name, {Integer} len
+   * @return {String} truncatedString
+  */
+  _truncateName:function(name,len) {
+    var len = len || this.truncationLength;
+
+    // make sure length is legit
+    if(len < 2) {
+      return name;
+    }
+
+    //check that name is greater than length; if not, return it
+    if(name.length <= len) {
+      return name;
+    }
+
+    // truncate
+    var frontLen = Math.ceil(len / 2),
+        backLen = Math.floor(len / 2),
+        front = name.slice(0,frontLen),
+        back = name.slice(-backLen);
+
+    return front + '...' + back;
   }
 };
 
@@ -11351,7 +11420,7 @@ PxVisBehavior.sizing = {
 
     @polymerBehavior PxVisBehavior.formatting
 */
-PxVisBehavior.formatting = {
+PxVisBehavior.formatting = [{
   properties: {
     /**
      * Defines how a display number should be formatted:
@@ -11465,44 +11534,8 @@ PxVisBehavior.formatting = {
       notify: true,
       value:''
     }
-
-  },
-  /**
-   * _truncateName takes a string and string length [optional].
-   * Returns a truncated string with the middle replaced by an ellipsis. The ellipsis does not count towards the total character count.
-   * Follows these truncation principles: http://www.gesdh.com/predix/product/principles/truncation/
-   * Example: LNG_BAH_HOT_EFFECTIVENESS_CORE8 --> LNG_B...CORE8
-   *
-   * Length cannot be less than 2 characters.
-   * Default length is 10 characters.
-   *
-   * If the string is less than or equal to the length or the length is invalid, returns the original string.
-   *
-   * @param {String} name, {Integer} len
-   * @return {String} truncatedString
-  */
-  _truncateName:function(name,len){
-    var len = len || 10;
-
-    // make sure length is legit
-    if(len < 2) {
-      return name;
-    }
-
-    //check that name is greater than length; if not, return it
-    if(name.length <= len){
-      return name;
-    }
-
-    // truncate
-    var frontLen = Math.ceil(len / 2),
-        backLen = Math.floor(len / 2),
-        front = name.slice(0,frontLen),
-        back = name.slice(-backLen);
-
-    return front + '...' + back;
   }
-};
+}, PxVisBehavior.truncating];
 
 /*
     Name:
@@ -11615,7 +11648,7 @@ PxVisBehavior.progressiveRendering = {
   properties: {
     /**
     * By default the lines are rendered progressively for a better user experience.
-    * However this can have a performance impact, minimal on chrome (+15% rendering 
+    * However this can have a performance impact, minimal on chrome (+15% rendering
     * time) but important on IE (+200% rendering time...)
     * Use this to prevent progressive rendering if you plan rendering a lot fo <datalist>
     * and using IE
@@ -11740,7 +11773,7 @@ PxVisBehavior.commonMethods = {
    * @return {bool}
    */
   _isObjEmpty:function(obj){
-    if(typeof(obj) === 'undefined'){
+    if(typeof(obj) === 'undefined') {
       return false;
     }
     return Object.keys(obj).length === 0;
@@ -11752,7 +11785,7 @@ PxVisBehavior.commonMethods = {
    * @return {bool}
    */
   _doesObjHaveValues:function(obj){
-    if(typeof(obj) === 'undefined'){
+    if(typeof(obj) === 'undefined' || obj === null) {
       return false;
     }
     return Object.keys(obj).length > 0;
@@ -12050,8 +12083,16 @@ PxVisBehavior.events = {
 PxVisBehavior.dimensions = {
   properties: {
     /**
+     * An optional dev set array to specify which dimensions to plot
+     *
+     */
+    axes: {
+      type: Array,
+      notify: true
+    },
+    /**
     * An array of dimensions which the chart uses.
-    *
+    * @private
     */
     dimensions: {
       type: Array,
@@ -16239,6 +16280,8 @@ button.btn {
 
             context = this._canvas.getContext("2d");
 
+            //reset translation so subsequent calls do not keep shifting canvas drawings
+            context.setTransform(1, 0, 0, 1, 0, 0);
             context.translate(this.margin.left, this.margin.top);
 
             //create some base tracking info so we know how many lines we draw later
@@ -18981,7 +19024,6 @@ button.btn {
      */
     _defineMultiLine: function(){
       //get our dimensions
-
       var dims = this.completeSeriesConfig[this.seriesId]['x'],
           //define a normal d3 line generator
           path = Px.d3.line().defined(function(d) {
@@ -19081,6 +19123,7 @@ button.btn {
         if(this.renderToCanvas){
           var data;
           // we need to wrap the data differently depending on if we are drawing many lines or just one line
+
           if(this.parallelCoordinates) {
             this._defineMultiLine();
             data = this.chartData;
@@ -19113,7 +19156,7 @@ button.btn {
             var frames = Math.max(data.length/1000, 5);
             this._renderProgressively(data, frames);
           }
-          
+          // make sure they are only drawn to the chart area and not the rest of the frame: equivalent to the clipPath for SVG
           this.canvasContext._pxLinesRedraw += 1;
         }
       },20);
@@ -19135,7 +19178,7 @@ button.btn {
         data = [data];
       }
 
-      if(this.gradientLine) {  
+      if(this.gradientLine) {
         //if gradient, regardless of category or not
         // Iterate over our data:
         for(var i = 0; i < data.length; i++) {
@@ -19178,7 +19221,7 @@ button.btn {
           }
           // Apply our styles and draw all the lines to the canvas
           this.canvasContext.strokeStyle = this.completeSeriesConfig[this.seriesId]['color'];
-          
+
         }
         this.canvasContext.stroke();
         //clean up drawing
@@ -19188,7 +19231,7 @@ button.btn {
 
     /**
      * Renders data in a specific number of frames, splitting the batch
-     * 
+     *
      */
     _renderProgressively: function(data, numberOfFrames) {
 
@@ -19206,14 +19249,14 @@ button.btn {
             getColorValue,
             processFunction,
             currentRenderingCounter;
-      
+
       //new request
       this._progressiveRenderingCounter++;
       currentRenderingCounter = this._progressiveRenderingCounter;
 
       //make sure canvas is clean
       this.canvasContext.clearRect(0, -1, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
-      
+
       if(this.parallelCoordinates) {
         //split the data in the number of frames desired
         for(j=0; j<numberOfFrames; j++) {
@@ -19235,10 +19278,10 @@ button.btn {
       var processColoredDataSlice = function() {
 
         if(currentRenderingCounter !== _this._progressiveRenderingCounter) {
-          //new request came in, cancel this drawing. Don't reset the counter as we want 
+          //new request came in, cancel this drawing. Don't reset the counter as we want
           //the new request to finish
           return;
-        } 
+        }
 
         var d = batches[currentIndex];
         for(var i = 0; i < d.length; i++) {
@@ -19265,7 +19308,7 @@ button.btn {
       var processGenericDataSlice = function() {
 
         if(currentRenderingCounter !== _this._progressiveRenderingCounter) {
-          //new request came in, cancel this drawing. Don't reset the counter as we want 
+          //new request came in, cancel this drawing. Don't reset the counter as we want
           //the new request to finish
           return;
         }
@@ -19274,7 +19317,7 @@ button.btn {
         _this.canvasContext.beginPath();
         for(var i = 0; i < d.length; i++) {
           if(!_this.mutedSeries[d[i][_this.seriesId]]) {
-            
+
             _this.line(d[i]);
           }
         }
@@ -19311,11 +19354,11 @@ button.btn {
         //"normal" color line
         processFunction = processGenericDataSlice;
       }
-      
+
       timer(processFunction);
     },
     /**
-     * Used to 'clear' the canvas fater drawing in case we drew outside our limits. 
+     * Used to 'clear' the canvas fater drawing in case we drew outside our limits.
      * We might want to consider using a clippath instead
      */
     _clearCanvasMargins: function() {
@@ -26236,6 +26279,7 @@ button.btn {
           PxVisBehavior.completeSeriesConfig,
           PxVisBehavior.commonMethods,
           PxVisBehaviorD3.axisConfig,
+          PxVisBehavior.truncating,
           commonColors
         ],
 
@@ -26278,16 +26322,45 @@ button.btn {
             value: '',
             notify: true,
             reflectToAttribute: true
-          }
+          },
+          /**
+           * The truncated title
+           */
+          displayedTitle: {
+            type: String,
+            computed: '_truncateTitle(title, truncationLength, appendUnitInTitle, completeSeriesConfig)'
+          },
+          /**
+           * Whether to append unit (if existing in config) in the title
+           */
+          appendUnitInTitle: {
+            type: Boolean,
+            value: false
+          },
+          /**
+           * Used to not draw series bar
+           */
+          preventSeriesBar: {
+            type: Boolean,
+            value: false
+          },
+          /**
+           * A boolean specifying if the axis should be completely redrawn every time
+           *
+           */
+          forceRefresh: {
+            type: Boolean,
+            value: false
+          },
         },
 
         observers: [
           'drawElement(currentDomain,svg,axis,margin)',
-          'updateTicks(tickValues.*)',
+          // 'updateTicks(tickValues.*)',
           'drawSeriesBars(completeSeriesConfig.*)',
-          '_muteSeriesBars(mutedSeries.*)'
+          '_muteSeriesBars(mutedSeries.*)',
+          '_titleChanged(displayedTitle, _axisGroup, titleLocation)'
         ],
-
 
         ready: function(){
           // if there is no dev set unique ID, generate one
@@ -26359,62 +26432,71 @@ button.btn {
          */
         drawElement: function() {
           this.debounce('drawAxis', function() {
+            if(this.svg.node()){
+              this.defineAxis();
+              // TODO unify my orientation checks
+              // TODO suport top and right
+              if(this.orientation === 'bottom'){
+                var h = this.height - this.margin.bottom - this.margin.top;
 
-            this.defineAxis();
-            // TODO unify my orientation checks
-            // TODO suport top and right
-            if(this.orientation === 'bottom'){
-              var h = this.height - this.margin.bottom - this.margin.top;
-
-              this.translateAmt = [0,h];
-            } else if(this.orientation === 'left'){
-              this.translateAmt = [0,0];
-            }
-
-            // checks to see if the axis already exists. If not, create; if so, update
-            if(!this._axisGroup) {
-              this._axisGroup = this.svg.append("g")
-                .attr("class", "axis")
-                .attr('axis-id',this.axisId)
-                .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
-                .call(this._axis);
-                // .each(function(d) { d3.select(this).call(_this._axis.scale(_this.axis[d])); })
-
-              this._setLineStyles(this._axisGroup,'line,path');
-              this._setLabelStyles(this._axisGroup);
-
-              if(this.title) {
-                this.drawTitle();
+                this.translateAmt = [0,h];
+              } else if(this.orientation === 'left'){
+                this.translateAmt = [0,0];
               }
 
-              this.drawSeriesBars();
-
-              // alert parents that we are done drawing the axis
-              this.fire("px-axis-done");
-            } else {
-
-              // if we have tickValues, we'll update another way
-              if(!this.tickValues || this.tickValues.length === 0){
-                this._updateAxis();
+              // checks to see if the axis already exists. If not, create; if so, update
+              if(!this._axisGroup) {
+                this._buildAxis();
+                // alert parents that we are done drawing the axis
+                this.fire("px-axis-done");
+              } else {
+                if(this.forceRefresh){
+                  this._axisGroup.remove();
+                  this._axisGroup = null;
+                  this._titleGroup.remove();
+                  this._titleGroup = null;
+                  this.drawElement();
+                } else {
+                  // if we have tickValues, we'll update another way
+                  if(!this.tickValues || this.tickValues.length === 0){
+                    this._updateAxis();
+                  }
+                }
               }
             }
-          }.bind(this), 5);
+          }, 5);
+        },
+        /**
+         * builds axis
+         *
+         */
+        _buildAxis: function(){
+          var g = this.svg.append("g")
+            .attr("class", "axis")
+            .attr('axis-id',this.axisId)
+            .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
+            .call(this._axis);
+            // .each(function(d) { d3.select(this).call(_this._axis.scale(_this.axis[d])); })
+
+          this.set('_axisGroup',g);
+
+          this._setLineStyles(this._axisGroup,'line,path');
+          this._setLabelStyles(this._axisGroup);
+
+          this.drawSeriesBars();
         },
         /**
          * Updates the axis
          *
          */
-        _updateAxis: function(){
+        _updateAxis: function() {
           this._axisGroup
           .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
           .call(this._axis);
 
          // this._setLineStyles(this._axisGroup,'line');
           this._setLabelStyles(this._axisGroup);
-	        
-          if(this.title) {
-            this.drawTitle();
-          }
+
           this.drawSeriesBars();
 
           // alert parents that we are done drawing the axis
@@ -26440,9 +26522,9 @@ button.btn {
          *
          * @method setLabelDims
          */
-        setLabelDims: function(){
+        setLabelDims: function() {
           var label = {};
-          switch(this.orientation){
+          switch(this.orientation) {
             case 'bottom':
               label.x = this.labelTypeSize / 4;
               label.y = this.labelTypeSize / 4;
@@ -26475,12 +26557,12 @@ button.btn {
          *
          * @method _setLabelStyles
          */
-        _setLabelStyles:function(elem){
+        _setLabelStyles:function(elem) {
           elem.selectAll('text')
             .attr('font-size', this.labelTypeSize + 'px')
             .attr('font-style','GE Inspira Sans');
 
-          if(this.labelPosition !== 'center'){
+          if(this.labelPosition !== 'center') {
             var label = this.setLabelDims();
 
             elem.selectAll('text')
@@ -26496,7 +26578,7 @@ button.btn {
          *
          * @method _setLineStyles
          */
-        _setLineStyles:function(elem,lines){
+        _setLineStyles:function(elem,lines) {
           elem.selectAll(lines)
             .attr('test','test')
             .attr('fill','none')
@@ -26509,86 +26591,115 @@ button.btn {
          *
          * @method drawTitle
          */
-        drawTitle:function(){
-          var ext = this._axisGroup.node().getBBox(),
-              location = this._doesObjHaveValues(this.titleLocation) ? 'custom' : this.orientation,
-              x,y,r,anchor;
+        drawTitle:function() {
+          this.debounce('drawTitle', function() {
+            var ext = this._axisGroup.node().getBBox(),
+                location = this._doesObjHaveValues(this.titleLocation) ? 'custom' : this.orientation,
+                x,y,r,anchor;
 
 
-          switch(location){
-            case 'bottom':
-              x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
-              y = this.labelTypeSize * 1.5 + parseFloat(ext['height']) + this.translateAmt[1];
-              r = 0;
-              anchor = "middle";
-              break;
+            switch(location) {
+              case 'bottom':
+                x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
+                y = this.labelTypeSize * 1.5 + parseFloat(ext['height']) + this.translateAmt[1];
+                r = 0;
+                anchor = "middle";
+                break;
 
-            case 'top':
-              x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
-              y = this.translateAmt[1];
-              r = 0;
-              anchor = "middle";
-              break;
+              case 'top':
+                x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
+                y = this.translateAmt[1];
+                r = 0;
+                anchor = "middle";
+                break;
 
-            case 'left':
-              x = (this.labelTypeSize + parseFloat(ext['width'])) * -1 + this.translateAmt[0];
-              y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
-              r = -90;
-              anchor = "middle";
-              break;
+              case 'left':
+                x = (this.labelTypeSize + parseFloat(ext['width'])) * -1 + this.translateAmt[0];
+                y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
+                r = -90;
+                anchor = "middle";
+                break;
 
-            case 'right':
-              x = this.labelTypeSize + parseFloat(ext['width']) + this.translateAmt[0];
-              y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
-              r = 90;
-              anchor = "middle";
-              break;
+              case 'right':
+                x = this.labelTypeSize + parseFloat(ext['width']) + this.translateAmt[0];
+                y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
+                r = 90;
+                anchor = "middle";
+                break;
 
-            case 'custom':
-              x = this.titleLocation.x;
-              y = this.titleLocation.y;
-              r = this.titleLocation.r;
-              anchor = this.titleLocation.anchor;
-              break;
-          }
+              case 'custom':
+                x = this.titleLocation.x;
+                y = this.titleLocation.y;
+                r = this.titleLocation.r;
+                anchor = this.titleLocation.anchor;
+                break;
+            }
 
           if(!this._titleGroup) {
 
-          this._titleGroup = this.svg.append("g")
-            .attr('class','title-group')
-            .attr('for', this.axisId)
-            .attr('transform',"translate(" + x + ',' + y + ")");
-
-          this._titleGroup.append("text")
-            .attr('class','axis-title')
-            .attr('font-size', this.titleTypeSize + 'px')
-            .attr('font-style','GE Inspira Sans')
-            .text(this.title)
-            .attr("text-anchor", anchor)
-            .style("text-anchor", anchor)
-            .attr('transform',"rotate(" + r + ")");
-          } else {
-
-            this.svg.select('g.title-group[for=' + this.axisId + ']')
+            this._titleGroup = this.svg.append("g")
+              .attr('class','title-group')
+              .attr('for', this.axisId)
               .attr('transform',"translate(" + x + ',' + y + ")");
-            this.svg.select('g.title-group[for=' + this.axisId + '] text')
+
+            this._titleGroup.append("text")
+              .attr('class','axis-title')
+              .attr('font-size', this.titleTypeSize + 'px')
+              .attr('font-style','GE Inspira Sans')
+              .text(this.displayedTitle)
               .attr("text-anchor", anchor)
               .style("text-anchor", anchor)
               .attr('transform',"rotate(" + r + ")");
-          }
+
+            } else {
+
+              this.svg.select('g.title-group[for=' + this.axisId + ']')
+                .attr('transform',"translate(" + x + ',' + y + ")");
+              this.svg.select('g.title-group[for=' + this.axisId + '] text')
+                .attr("text-anchor", anchor)
+                .style("text-anchor", anchor)
+                .text(this.displayedTitle)
+                .attr('transform',"rotate(" + r + ")");
+            }
+          }.bind(this), 5);
+
+          // console.log(this._titleGroup)
+          // this._titleGroup = this.svg.selectAll("g.title-group")
+          //   .data([this.title]);
+          // console.log(this._titleGroup)
+          //
+          // this._titleGroup.exit().remove();
+          //
+          // this._titleGroup.enter()
+          //   .append("g")
+          //   .attr('class','title-group')
+          //   .attr('for', this.axisId)
+          //   .append("text")
+          //   .attr('class','axis-title')
+          //   .attr('font-size', this.titleTypeSize + 'px')
+          //   .attr('font-style','GE Inspira Sans')
+          //
+          // this._titleGroup.merge(this._titleGroup)
+          //   .attr('transform',"translate(" + x + ',' + y + ")")
+          //   .select('.axis-title')
+          //   .text(this.title)
+          //   .attr("text-anchor", anchor)
+          //   .style("text-anchor", anchor)
+          //   .attr('transform',"rotate(" + r + ")");
+
         },
         /**
          * Draws the color bars for each series
          *
          * @method drawSeriesBars
          */
-        drawSeriesBars:function(){
-          if(this._doesObjHaveValues(this.completeSeriesConfig) && this._axisGroup){
+        drawSeriesBars:function() {
+          if(!this.preventSeriesBar && this._doesObjHaveValues(this.completeSeriesConfig) && this._axisGroup) {
             // FIXME do we need to move the title group based on how many series we have
             var keys = Object.keys(this.completeSeriesConfig),
                 kLen = keys.length,
                 i;
-            for(i = 0; i < kLen; i++){
+            for(i = 0; i < kLen; i++) {
               this._drawBar(this._titleGroup,keys[i],this.completeSeriesConfig[keys[i]]['color'],i);
             }
           }
@@ -26598,12 +26709,12 @@ button.btn {
          *
          * @method muteSeriesBars
          */
-        _muteSeriesBars:function(){
+        _muteSeriesBars:function() {
           var keys = Object.keys(this.mutedSeries);
-          for(var i = 0; i < keys.length; i++){
+          for(var i = 0; i < keys.length; i++) {
             var series = this._titleGroup.select('[series-bar-id=bar_' + keys[i] + ']');
             // if we want to mute it
-            if(this.mutedSeries[keys[i]]){
+            if(this.mutedSeries[keys[i]]) {
               series.attr('opacity',0.5);
             } else {
               series.attr('opacity',1);
@@ -26615,7 +26726,7 @@ button.btn {
          *
          * @method drawSeriesBars
          */
-        _drawBar:function(elem,sid,color,index){
+        _drawBar:function(elem,sid,color,index) {
           var w = elem.select('.axis-title').node().getBoundingClientRect()['height'];
           elem.append("rect")
             .attr('height',3)
@@ -26623,6 +26734,32 @@ button.btn {
             .attr('fill',color)
             .attr('series-bar-id','bar_' + sid)
             .attr('transform',"translate(-12," + (-w - 8 * index) + ")");
+        },
+        /**
+         * truncates the title label appropriately
+         */
+        _truncateTitle: function(title, truncationLength, appendUnitInTitle) {
+          var oldTitle = this._truncatedTitle,
+              unit = '',
+              newTitle;
+
+          if(appendUnitInTitle && this.completeSeriesConfig[this.title]
+              && this.completeSeriesConfig[this.title].yAxisUnit) {
+            unit = ' [' + this.completeSeriesConfig[this.title].yAxisUnit + ']';
+          }
+
+          newTitle = this._truncateName(title, truncationLength) + unit;
+
+          if(newTitle !== oldTitle) {
+            this.fire('px-vis-axis-displayed-title-changed', {displayedTitle: newTitle, title: this.title});
+          }
+
+          return newTitle;
+        },
+        _titleChanged: function(displayedTitle) {
+          if(this._doesObjHaveValues(this._axisGroup)) {
+            this.drawTitle();
+          }
         }
     });
 </script>
@@ -36982,23 +37119,6 @@ button.btn {
        value:"vertical",
        notify: true
       },
-      /**
-       * Defines if the names in the register should get truncated and to how many characters.
-       *
-       * Default length is 10 characters, not including the ellipsis which gets inserted.
-       *
-       * The length must be at least 2.
-       *
-       * To disable truncation, set the value to -1
-       *
-       * @property truncationLength
-       * @type Number
-       * @default 10
-      */
-      truncationLength:{
-       type:Number,
-       value:10
-     },
       /**
        * Holder for the formated first datetime string
        *
