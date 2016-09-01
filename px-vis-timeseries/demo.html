@@ -12114,7 +12114,7 @@ PxVisBehavior.dimensions = {
     PxVisBehavior.categories
 
     Description:
-    Polymer behavior that provides categories definitions
+    Polymer behavior that provides categories definitions which can be used to color the series lines by category
 
 
     @polymerBehavior PxVisBehavior.categories
@@ -12123,7 +12123,7 @@ PxVisBehavior.dimensions = {
 PxVisBehavior.categories = {
   properties: {
     /**
-     * A dev set string speciying which key to use as the category.
+     * A dev set string speciying which key to use as the category to use to color the series lines
      *
      */
     categoryKey: {
@@ -12131,7 +12131,7 @@ PxVisBehavior.categories = {
       notify: true
     },
     /**
-     * A dev set array defining the categories.
+     * A dev set array defining the categories values.
      *
      */
     categories: {
@@ -12145,15 +12145,15 @@ PxVisBehavior.categories = {
 
 /*
     Name:
-    PxVisBehaviorD3.interaction
+    PxVisBehaviorD3.commonAxis
 
     Description:
-    Polymer behavior that provides the interactionSvg object for d3 components.
+    Polymer behavior that provides a boolean to specify a common axis for a chart.
 
     Dependencies:
     - D3.js
 
-    @polymerBehavior PxVisBehaviorD3.interaction
+    @polymerBehavior PxVisBehaviorD3.commonAxis
 */
 PxVisBehavior.commonAxis = {
   properties: {
@@ -12408,8 +12408,8 @@ PxVisBehaviorD3.svg = {
    * for the canvas, and draw on the canvas
    */
   _drawCanvg: function(canvas, svgData, x, y, callback) {
-    var options = {ignoreDimensions: true, 
-                  ignoreClear: true, 
+    var options = {ignoreDimensions: true,
+                  ignoreClear: true,
                   renderCallback: callback,
                   offsetX: x,
                   offsetY: y,
@@ -12417,7 +12417,7 @@ PxVisBehaviorD3.svg = {
     canvg(canvas, svgData, options);
   },
   /**
-   * 
+   *
    */
   _nativeDrawSvgOnCanvas: function(canvas, svgData, x, y, sucessCallback, failureCallback) {
     //detect canvas tainting failures
@@ -12487,7 +12487,7 @@ PxVisBehaviorD3.svg = {
       childNode = childNode.nextSibling;
     }
 
-    return '<svg xmlns="' + svg.attributes.xmlns.value + '" width="' + 
+    return '<svg xmlns="' + svg.attributes.xmlns.value + '" width="' +
       svg.attributes.width.value + '" height="' + svg.attributes.height.value +
       '">' + output.join('') + '</svg>';
   }
@@ -12593,6 +12593,36 @@ PxVisBehaviorD3.axes = {
     currentDomainY: {
       type:Array,
       notify:true
+    }
+  }
+};
+
+/*
+    Name:
+    PxVisBehaviorD3.domainUpdate
+
+    Description:
+    Polymer behavior that provides domain update propertyt
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehaviorD3.domainUpdate
+*/
+PxVisBehaviorD3.domainUpdate = {
+  properties: {
+    /**
+     * Boolean switching when the domain(s) has(have) changed
+     *
+     * Serves as a trigger for many elements to redraw
+     *
+     * @property currentDomain
+     * @type Object
+     */
+    domainChanged: {
+      type: Boolean,
+      notify: true,
+      value: null
     }
   }
 };
@@ -12712,9 +12742,9 @@ PxVisBehaviorD3.selectedTimeDomain = [{
      *    "to" : "2013-02-04T22:44:30.652Z"
      * }
      * ```
-     * 
+     *
      * Updates and is updated by SelectedDomain
-     * 
+     *
      */
     range: {
       type: Object,
@@ -12729,8 +12759,10 @@ PxVisBehaviorD3.selectedTimeDomain = [{
       value: false
     }
   },
-  observers: ['_rangeChanged(range)',
-            '_selectedDomainChanged(selectedDomain)'],
+  observers: [
+    '_rangeChanged(range)',
+    // '_selectedDomainChanged(selectedDomain)'
+  ],
   attached: function() {
     this._isAttached = true;
   },
@@ -12767,7 +12799,7 @@ PxVisBehaviorD3.selectedTimeDomain = [{
       this._preventRangeUpdate = false;
     }
   }
-  
+
 }, PxVisBehaviorD3.selectedDomain];
 
 /*
@@ -13102,7 +13134,7 @@ PxVisBehaviorChart.chartCommon = [{
     observers: [
       '_setCompleteSeriesConfig(defaultSeriesConfig.*,chartData.*,seriesConfig.*)'
     ],
-    
+
     _calcChartExts: function(mins,maxes,axis){
       if(this[axis + 'AxisType'] === 'ordinal'){
         // how should someone set the ordinal list? Differet key in seriesConfig?
@@ -13289,7 +13321,7 @@ PxVisBehaviorChart.chartCommon = [{
     PxVisBehaviorChart.saveImage
 
     Description:
-    Polymer behavior that allows the chart to return an image of itself based on 
+    Polymer behavior that allows the chart to return an image of itself based on
     its canvas and/or SVG
 
     @polymerBehavior PxVisBehaviorChart.saveImage
@@ -13299,16 +13331,16 @@ PxVisBehaviorChart.saveImage = {
      * Takes a graphic "snapshot" of the component and pass results through a callback:
      * - a canvas containing the graphical snapshot
      * - a png base 64 data uri
-     * 
+     *
      * callback object:
      * {
      *  canvas: theCanvasObject
      *  image: "data:image/png;base64;iVBORw0KGgoAAAANSUhEUgAAAAUAAAAFCAYAAACN..."
      * }
-     * 
-     * the data uri can be used to save the image and the canvas object to do 
+     *
+     * the data uri can be used to save the image and the canvas object to do
      * further processing, such as combining different elements snapshot into one image
-     * 
+     *
      */
     getImage: function(callback) {
       //create a new canvas to render both the canvas and svg elements on it
@@ -13358,8 +13390,9 @@ PxVisBehaviorChart.precipitationPattern = {
     'px-vis-clip-path-updated'        : '_updateLocalProperty',
     'px-vis-series-clip-path-updated' : '_updateLocalProperty',
     'px-vis-svg-element-updated'      : '_updateLocalProperty',
-    'px-vis-canvas-context-updated'   : '_updateGlobalProperty',
+    'px-vis-domain-changed-updated'   : '_updateLocalProperty',
 
+    'px-vis-canvas-context-updated'   : '_updateGlobalProperty',
     'px-vis-muted-series-updated'     : '_updateGlobalProperty',
     'px-vis-selected-domain-updated'  : '_updateGlobalProperty'
 
@@ -13450,6 +13483,43 @@ PxVisBehaviorChart.chartAutoResize = {
         value: false
       }
     }
+};
+
+/**
+    Name:
+    PxVisBehaviorChart.subConfiguration
+
+    Description:
+    Polymer behavior that provides subConfiguration for elements such as axes, register, etc.
+
+    Dependencies:
+
+    @polymerBehavior PxVisBehaviorChart.subConfiguration
+*/
+PxVisBehaviorChart.subConfiguration = {
+    properties: {
+    },
+    /**
+     * Applies the config object to the element. Each key in the config object
+     * is the name of the property to be applied
+     *
+     */
+    _applyConfigToElement: function(config, element) {
+      if(typeof(config) !== 'object') {
+        console.error('Configuration object must be valid JSON: ' + config);
+        return;
+      }
+      if(!element) {
+        console.error('Cannot apply config to undefined element');
+        return;
+      }
+
+      var keys = Object.keys(config);
+      for(var i = 0; i < keys.length; i++){
+        var key = keys[i];
+        element.set(key, config[key])
+      }
+    },
 };
 </script>
 <script>
@@ -18852,6 +18922,26 @@ button.btn {
     ],
 
     /**
+     * px-vis-progressive-rendering-started, fired when a canvas with progressive rendering
+     * enabled starts rendering
+     * evt.details contains:
+     * { numberOfFrames: the number of frames that will be used to render,
+     * }
+     *
+     * @event px-vis-progressive-rendering-started
+     */
+
+    /**
+     * px-vis-progressive-rendering-ended, fired when a canvas with progressive rendering
+     * enabled has finished rendering
+     * evt.details contains:
+     * { numberOfFrames: the number of frames that have been used to render,
+     * }
+     *
+     * @event px-vis-progressive-rendering-ended
+     */
+
+    /**
      * Properties block, expose attribute values to the DOM via 'reflect'
      *
      * @property properties
@@ -19059,6 +19149,7 @@ button.btn {
     drawElement: function() {
       this.debounce('draw',function(){
         if(!this.renderToCanvas) {
+
           // we need to wrap the data differently depending on if we are drawing many lines or just one line
           if(this.parallelCoordinates) {
             var data = this.chartData;
@@ -19067,7 +19158,6 @@ button.btn {
             var data = [this.chartData];
             this._defineSingleLine();
           }
-
           // checks to see if the group already exists. If not, create; if so, update
           if(this._isObjEmpty(this.lineGroup)) {
             // draw the path
@@ -19075,15 +19165,16 @@ button.btn {
               .attr("series-id", 'line_' + this.seriesId)
               .attr("class", "series-line");
           }
+
           // set our data
-          this.lineBuilder = this.lineGroup.selectAll('path.series-line')
+           var lineBuilder = this.lineGroup.selectAll('path.series-line')
             .data(data);
 
           // When datapoints disappear from our data, remove them
-          this.lineBuilder.exit().remove();
+          lineBuilder.exit().remove();
 
           // When datapoints are added to our data, add stuff
-          this.lineBuilder.enter()
+          lineBuilder.enter()
             .append('path')
             .attr("class", "series-line")
             .attr("series-id", function(d,i){
@@ -19091,7 +19182,7 @@ button.btn {
             }.bind(this))
             .attr('fill','none')
           // When datapoints are added OR this funtion is run, draw stuff
-          .merge(this.lineBuilder)
+          .merge(lineBuilder)
             .attr("d", this.line)
             // TODO add ability to color by category
             .attr('stroke',function(d,i){
@@ -19148,7 +19239,6 @@ button.btn {
 
           //Render data progressively
           this.canvasContext.lineWidth = 1;
-
           if(this.noCanvasProgressiveRendering) {
             this._renderAtOnce(data);
           } else {
@@ -19235,6 +19325,8 @@ button.btn {
      */
     _renderProgressively: function(data, numberOfFrames) {
 
+      this.fire('px-vis-line-progressive-rendering-started', {numberOfFrames: numberOfFrames});
+
         var batches = [],
             currentIndex = 0,
             j = 0,
@@ -19301,6 +19393,7 @@ button.btn {
         } else {
           //finished drawing, reset drawing request counter
           _this._progressiveRenderingCounter = 0;
+          _this.fire('px-vis-line-progressive-rendering-ended', {numberOfFrames: numberOfFrames});
         }
       };
 
@@ -19332,7 +19425,8 @@ button.btn {
         } else {
           //end, clean up
           _this._clearCanvasMargins();
-          this._progressiveRenderingCounter = 0;
+          _this._progressiveRenderingCounter = 0;
+          _this.fire('px-vis-line-progressive-rendering-ended', {numberOfFrames: numberOfFrames});
         }
       };
       //END PROCESSING FUNCTIONS
@@ -19467,7 +19561,7 @@ button.btn {
      */
      _muteLine:function(){
        this.linePath.attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
-         .attr('stroke-opacity',0);
+         .attr('stroke-opacity',0.3);
      },
   });
 </script>
@@ -26264,7 +26358,7 @@ button.btn {
             flex: none !important; } }
 
 </style>
-
+      <px-tooltip id="tooltip" delay="500">{{title}} {{_currentUnits}}</px-tooltip>
     </template>
 </dom-module>
 
@@ -26280,6 +26374,7 @@ button.btn {
           PxVisBehavior.commonMethods,
           PxVisBehaviorD3.axisConfig,
           PxVisBehavior.truncating,
+          PxVisBehaviorD3.domainUpdate,
           commonColors
         ],
 
@@ -26293,19 +26388,15 @@ button.btn {
           /**
            * Holder for the instantiated d3 axis
            *
-           * @property _axis
-           * @type Object
            */
           _axis: {
             type: Object,
-            value: function() {return{};},
+            value: function() { return {}; },
             notify: true
           },
           /**
            * Holder for the axis drawing
            *
-           * @property _axisGroup
-           * @type Object
            */
           _axisGroup: {
             type: Object
@@ -26313,8 +26404,6 @@ button.btn {
           /**
            * A unique ID for the axis
            *
-           * @property axisId
-           * @type String
            * @default random string
            */
           axisId: {
@@ -26328,7 +26417,8 @@ button.btn {
            */
           displayedTitle: {
             type: String,
-            computed: '_truncateTitle(title, truncationLength, appendUnitInTitle, completeSeriesConfig)'
+            notify: true,
+            value: ''
           },
           /**
            * Whether to append unit (if existing in config) in the title
@@ -26338,28 +26428,49 @@ button.btn {
             value: false
           },
           /**
-           * Used to not draw series bar
+           * Boolean to specify not to draw the series bars
            */
           preventSeriesBar: {
             type: Boolean,
             value: false
           },
           /**
-           * A boolean specifying if the axis should be completely redrawn every time
+           * A boolean specifying if the axis title has been drawn
            *
            */
-          forceRefresh: {
+          titleDrawn: {
+            type: Boolean,
+            value: null
+          },
+          /**
+           * The series ID this axis refers to, used to look in the config
+           */
+          seriesId: {
+            type: String
+          },
+          /**
+           * the text reprensenting the units of the axis
+           */
+          _currentUnits: {
+            type: String,
+            computed: '_computeUnits(appendUnitInTitle, completeSeriesConfig, title)'
+          },
+          /**
+           * A boolean specifying if the axis title should truncate if too long
+           *
+           */
+          titleTruncation: {
             type: Boolean,
             value: false
-          },
+          }
         },
 
         observers: [
-          'drawElement(currentDomain,svg,axis,margin)',
-          // 'updateTicks(tickValues.*)',
-          'drawSeriesBars(completeSeriesConfig.*)',
+          'drawElement(domainChanged,svg,axis,margin,height)',
+          'drawSeriesBars(completeSeriesConfig.*, titleDrawn)',
           '_muteSeriesBars(mutedSeries.*)',
-          '_titleChanged(displayedTitle, _axisGroup, titleLocation)'
+          '_titleChanged(displayedTitle, _axisGroup, titleLocation.*)',
+          '_truncateTitle(title, truncationLength, appendUnitInTitle, completeSeriesConfig)'
         ],
 
         ready: function(){
@@ -26374,6 +26485,15 @@ button.btn {
             // alert parents that we are done drawing the axis
             this.fire("px-axis-done");
           }
+        },
+
+        detached: function(){
+          // this.svg.selectAll('g').each(function(d){
+          //   Px.d3.select(this).remove();
+          // });
+          // // this.svg.remove();
+          // this._axisGroup.remove();
+          // this._axisGroup = null;
         },
 
         /**
@@ -26431,8 +26551,8 @@ button.btn {
          * @method drawElement
          */
         drawElement: function() {
-          this.debounce('drawAxis', function() {
-            if(this.svg.node()){
+        //  this.debounce('drawAxis', function() {
+            if(this.svg.node() && this.domainChanged !== null){
               this.defineAxis();
               // TODO unify my orientation checks
               // TODO suport top and right
@@ -26450,21 +26570,10 @@ button.btn {
                 // alert parents that we are done drawing the axis
                 this.fire("px-axis-done");
               } else {
-                if(this.forceRefresh){
-                  this._axisGroup.remove();
-                  this._axisGroup = null;
-                  this._titleGroup.remove();
-                  this._titleGroup = null;
-                  this.drawElement();
-                } else {
-                  // if we have tickValues, we'll update another way
-                  if(!this.tickValues || this.tickValues.length === 0){
-                    this._updateAxis();
-                  }
-                }
+                this._updateAxis();
               }
             }
-          }, 5);
+          // }, 5);
         },
         /**
          * builds axis
@@ -26474,6 +26583,7 @@ button.btn {
           var g = this.svg.append("g")
             .attr("class", "axis")
             .attr('axis-id',this.axisId)
+         //   .attr('debug-id',this.title)
             .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
             .call(this._axis);
             // .each(function(d) { d3.select(this).call(_this._axis.scale(_this.axis[d])); })
@@ -26482,8 +26592,6 @@ button.btn {
 
           this._setLineStyles(this._axisGroup,'line,path');
           this._setLabelStyles(this._axisGroup);
-
-          this.drawSeriesBars();
         },
         /**
          * Updates the axis
@@ -26494,10 +26602,7 @@ button.btn {
           .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
           .call(this._axis);
 
-         // this._setLineStyles(this._axisGroup,'line');
           this._setLabelStyles(this._axisGroup);
-
-          this.drawSeriesBars();
 
           // alert parents that we are done drawing the axis
           this.fire("px-axis-done");
@@ -26560,7 +26665,8 @@ button.btn {
         _setLabelStyles:function(elem) {
           elem.selectAll('text')
             .attr('font-size', this.labelTypeSize + 'px')
-            .attr('font-style','GE Inspira Sans');
+            .style('font-family','GE Inspira Sans');
+            // .attr('font-style','GE Inspira Sans');
 
           if(this.labelPosition !== 'center') {
             var label = this.setLabelDims();
@@ -26592,67 +26698,64 @@ button.btn {
          * @method drawTitle
          */
         drawTitle:function() {
-          this.debounce('drawTitle', function() {
-            var ext = this._axisGroup.node().getBBox(),
-                location = this._doesObjHaveValues(this.titleLocation) ? 'custom' : this.orientation,
-                x,y,r,anchor;
+          var ext = this._axisGroup.node().getBBox(),
+              location = this._doesObjHaveValues(this.titleLocation) ? 'custom' : this.orientation,
+              x,y,r,anchor;
 
+          switch(location) {
+            case 'bottom':
+              x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
+              y = this.labelTypeSize * 1.5 + parseFloat(ext['height']) + this.translateAmt[1];
+              r = 0;
+              anchor = "middle";
+              break;
 
-            switch(location) {
-              case 'bottom':
-                x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
-                y = this.labelTypeSize * 1.5 + parseFloat(ext['height']) + this.translateAmt[1];
-                r = 0;
-                anchor = "middle";
-                break;
+            case 'top':
+              x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
+              y = this.translateAmt[1];
+              r = 0;
+              anchor = "middle";
+              break;
 
-              case 'top':
-                x = parseFloat(ext['width']) / 2 + this.translateAmt[0];
-                y = this.translateAmt[1];
-                r = 0;
-                anchor = "middle";
-                break;
+            case 'left':
+              x = (this.labelTypeSize + parseFloat(ext['width'])) * -1 + this.translateAmt[0];
+              y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
+              r = -90;
+              anchor = "middle";
+              break;
 
-              case 'left':
-                x = (this.labelTypeSize + parseFloat(ext['width'])) * -1 + this.translateAmt[0];
-                y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
-                r = -90;
-                anchor = "middle";
-                break;
+            case 'right':
+              x = this.labelTypeSize + parseFloat(ext['width']) + this.translateAmt[0];
+              y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
+              r = 90;
+              anchor = "middle";
+              break;
 
-              case 'right':
-                x = this.labelTypeSize + parseFloat(ext['width']) + this.translateAmt[0];
-                y = parseFloat(ext['height']) / 2 + this.translateAmt[1];
-                r = 90;
-                anchor = "middle";
-                break;
+            case 'custom':
+              x = this.titleLocation.x;
+              y = this.titleLocation.y;
+              r = this.titleLocation.r;
+              anchor = this.titleLocation.anchor;
+              break;
+          }
 
-              case 'custom':
-                x = this.titleLocation.x;
-                y = this.titleLocation.y;
-                r = this.titleLocation.r;
-                anchor = this.titleLocation.anchor;
-                break;
-            }
+        if(!this._titleGroup) {
+          this._titleGroup = this.svg.append("g")
+            .attr('class','title-group')
+            .attr('for', this.axisId)
+            .attr('transform',"translate(" + x + ',' + y + ")");
 
-          if(!this._titleGroup) {
+          this._titleGroup.append("text")
+            .attr('class','axis-title')
+            .attr('font-size', this.titleTypeSize + 'px')
+            .style('font-family','GE Inspira Sans')
+            // .attr('font-style','GE Inspira Sans')
+            .text(this.displayedTitle)
+            .attr("text-anchor", anchor)
+            .style("text-anchor", anchor)
+            .attr('transform',"rotate(" + r + ")");
 
-            this._titleGroup = this.svg.append("g")
-              .attr('class','title-group')
-              .attr('for', this.axisId)
-              .attr('transform',"translate(" + x + ',' + y + ")");
-
-            this._titleGroup.append("text")
-              .attr('class','axis-title')
-              .attr('font-size', this.titleTypeSize + 'px')
-              .attr('font-style','GE Inspira Sans')
-              .text(this.displayedTitle)
-              .attr("text-anchor", anchor)
-              .style("text-anchor", anchor)
-              .attr('transform',"rotate(" + r + ")");
-
-            } else {
-
+          } else {
               this.svg.select('g.title-group[for=' + this.axisId + ']')
                 .attr('transform',"translate(" + x + ',' + y + ")");
               this.svg.select('g.title-group[for=' + this.axisId + '] text')
@@ -26660,8 +26763,7 @@ button.btn {
                 .style("text-anchor", anchor)
                 .text(this.displayedTitle)
                 .attr('transform',"rotate(" + r + ")");
-            }
-          }.bind(this), 5);
+          }
 
           // console.log(this._titleGroup)
           // this._titleGroup = this.svg.selectAll("g.title-group")
@@ -26687,6 +26789,8 @@ button.btn {
           //   .style("text-anchor", anchor)
           //   .attr('transform',"rotate(" + r + ")");
 
+          this._processTooltip();
+          this.set('titleDrawn', (this.titleDrawn === null) ? true : !this.titleDrawn);
         },
         /**
          * Draws the color bars for each series
@@ -26694,7 +26798,8 @@ button.btn {
          * @method drawSeriesBars
          */
         drawSeriesBars:function() {
-          if(!this.preventSeriesBar && this._doesObjHaveValues(this.completeSeriesConfig) && this._axisGroup) {
+          if(!this.preventSeriesBar && this._doesObjHaveValues(this.completeSeriesConfig) && this._axisGroup && this.displayedTitle) {
+
             // FIXME do we need to move the title group based on how many series we have
             var keys = Object.keys(this.completeSeriesConfig),
                 kLen = keys.length,
@@ -26735,30 +26840,67 @@ button.btn {
             .attr('series-bar-id','bar_' + sid)
             .attr('transform',"translate(-12," + (-w - 8 * index) + ")");
         },
+        _computeUnits: function(appendUnitInTitle, completeSeriesConfig, title) {
+          var result = '';
+
+          if(appendUnitInTitle && this.completeSeriesConfig[this.seriesId]
+                && this.completeSeriesConfig[this.seriesId].yAxisUnit) {
+              result = ' [' + this.completeSeriesConfig[this.seriesId].yAxisUnit + ']';
+          }
+
+          return result;
+        },
         /**
          * truncates the title label appropriately
          */
         _truncateTitle: function(title, truncationLength, appendUnitInTitle) {
-          var oldTitle = this._truncatedTitle,
-              unit = '',
-              newTitle;
+          this.debounce('_truncateTitle', function() {
 
-          if(appendUnitInTitle && this.completeSeriesConfig[this.title]
-              && this.completeSeriesConfig[this.title].yAxisUnit) {
-            unit = ' [' + this.completeSeriesConfig[this.title].yAxisUnit + ']';
-          }
-
-          newTitle = this._truncateName(title, truncationLength) + unit;
-
-          if(newTitle !== oldTitle) {
-            this.fire('px-vis-axis-displayed-title-changed', {displayedTitle: newTitle, title: this.title});
-          }
-
-          return newTitle;
+              var oldTitle = this.displayedTitle,
+                  newTitle;
+              if(this.titleTruncation){
+                newTitle = this._truncateName(title, truncationLength) + this._currentUnits;
+              } else {
+                newTitle = title;
+              }
+              if(newTitle !== oldTitle) {
+                this.fire('px-vis-axis-displayed-title-changed', {displayedTitle: newTitle, title: this.title, id: this.seriesId});
+                this.set('displayedTitle', newTitle);
+              }
+           }, 5);
         },
         _titleChanged: function(displayedTitle) {
-          if(this._doesObjHaveValues(this._axisGroup)) {
-            this.drawTitle();
+          this.debounce('drawTitle', function() {
+
+            if(this._doesObjHaveValues(this._axisGroup) && this._axisGroup.node() !== null && this._axisGroup.node().ownerSVGElement !== null) {
+            // if(this._doesObjHaveValues(this._axisGroup) && this._axisGroup.node() !== null && this._axisGroup.node().ownerSVGElement !== null) {
+              this.drawTitle();
+            }
+          }.bind(this), 5);
+        },
+        /**
+         * checks it the label needs a tooltip an appropriately add or remove it
+         */
+        _processTooltip: function() {
+          var isTruncated = this.title.length > 2 && this.title.length > this.truncationLength,
+              containsTooltip = false,
+              children = this._axisGroup.node().childNodes;
+
+          //can't use "contains" function on the node cause it's an SVG
+          //element and IE doesn't support it
+          for(var i=0; i<children.length; i++) {
+            if(children === this.$.tooltip) {
+              containsTooltip = true;
+              break;
+            }
+          }
+
+          if(!isTruncated && containsTooltip) {
+            //not needed anymore, remove
+            this._axisGroup.node().removeChild(this.$.tooltip);
+          } else if(isTruncated && !containsTooltip) {
+            this._axisGroup.node().appendChild(this.$.tooltip);
+            this.$.tooltip.for = this._titleGroup.node();
           }
         }
     });
@@ -28020,7 +28162,8 @@ button.btn {
           PxVisBehavior.commonMethods,
           PxVisBehaviorD3.axis,
           PxVisBehaviorD3.axisConfig,
-          commonColors
+          commonColors,
+          PxVisBehaviorD3.domainUpdate
         ],
 
         /**
@@ -28036,7 +28179,7 @@ button.btn {
            * @property _grid
            * @type Object
            */
-          _grid:{
+          _grid: {
             type: Object,
             notify: true
           },
@@ -28046,7 +28189,7 @@ button.btn {
            * @property _gridGroup
            * @type Object
            */
-          _gridGroup:{
+          _gridGroup: {
             type: Object,
             value: function() {return{};}
           },
@@ -28057,7 +28200,7 @@ button.btn {
            * @type String
            * @default random string
            */
-          gridId:{
+          gridId: {
             type:String,
             value: '',
             notify: true,
@@ -28069,20 +28212,20 @@ button.btn {
            * @property translateAmt
            * @type Array
            */
-          translateAmt:{
+          translateAmt: {
             type: Array,
-            value:function(){ return [0,0]; }
+            value:function() { return [0,0]; }
           },
         },
 
         observers: [
-          'drawElement(currentDomain,axis,margin,length,svg)'
+          'drawElement(domainChanged,axis,margin,length,svg)'
         ],
 
 
-        ready:function(){
+        ready:function() {
           // if there is no dev set unique ID, generate one
-          if(!this.gridId){
+          if(!this.gridId) {
             this.set('gridId', this.generateRandomID('grid_'));
           }
         },
@@ -28092,8 +28235,8 @@ button.btn {
          *
          * @method _drawElement
          */
-        defineGrid:function(){
-          switch(this.orientation){
+        defineGrid:function() {
+          switch(this.orientation) {
             case 'bottom':
               this._grid = Px.d3.axisBottom(this.axis);
               break;
@@ -28111,7 +28254,7 @@ button.btn {
               break;
           }
 
-          if(this.tickValues && this.tickValues.length > 0){
+          if(this.tickValues && this.tickValues.length > 0) {
             this._grid.tickValues(this.tickValues);
           }
 
@@ -28119,9 +28262,9 @@ button.btn {
           // TODO link to number of gridlines the axis has and dev set multiplier (2x)
           // change default (10) ticks
           // this._grid.ticks();
-          if(this.orientation === 'bottom'){
+          if(this.orientation === 'bottom') {
             this._grid.tickSizeInner(this.margin.top + this.margin.bottom - this.length);
-          } else if(this.orientation === 'left'){
+          } else if(this.orientation === 'left') {
             this._grid.tickSizeInner(this.margin.left + this.margin.right - this.length);
           }
         },
@@ -28131,53 +28274,54 @@ button.btn {
          * @method _drawElement
          */
         drawElement: function() {
+          this.debounce('draw_grid', function() {
+            if(this._doesObjHaveValues(this.currentDomain)) {
+              this.defineGrid();
+              // this._grid.tickValues(this.axis.domain());
+              if(this.orientation === 'bottom') {
+                var h = this.svg.attr('height') - this.margin.bottom - this.margin.top;
+                this.translateAmt = [0,h];
+              } else if(this.orientation === 'left') {
+                this.translateAmt = [0,0];
+              }
 
-          this.defineGrid();
-          // this._grid.tickValues(this.axis.domain());
-          if(this.orientation === 'bottom'){
-            var h = this.svg.attr('height') - this.margin.bottom - this.margin.top;
-            this.translateAmt = [0,h];
-          } else if(this.orientation === 'left'){
-            this.translateAmt = [0,0];
-          }
+              // checks to see if the grid already exists. If not, create; if so, update
+              if(this._isObjEmpty(this._gridGroup)) {
+                this._gridGroup = this.svg.append("g")
+                  .attr("class", "grid")
+                  .attr('grid-id',this.gridId)
+                  .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
+                  .call(this._grid);
 
-          // checks to see if the grid already exists. If not, create; if so, update
-          if(this._isObjEmpty(this._gridGroup)){
-            this._gridGroup = this.svg.append("g")
-              .attr("class", "grid")
-              .attr('grid-id',this.gridId)
-              .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
-              .call(this._grid);
+                this._removeUncessaryElems(this._gridGroup);
+                this._setLineStyles(this._gridGroup,'line');
 
-            this._removeUncessaryElems(this._gridGroup);
-            this._setLineStyles(this._gridGroup,'line');
+                // the first tick overlaps the x-axis path and is unnessary
+                // TODO make sure this doesnt get us in trouble in different min y values
+                // TODO What if there is no x-axis? How to do this better?
+                // this._gridGroup.select('line').remove();
 
-            // the first tick overlaps the x-axis path and is unnessary
-            // TODO make sure this doesnt get us in trouble in different min y values
-            // TODO What if there is no x-axis? How to do this better?
-            // this._gridGroup.select('line').remove();
+                //keep a reference for later
+                // this._gridGroup = this.svg.select('g.grid[grid-id=' + this.gridId + ']');
 
-            //keep a reference for later
-            // this._gridGroup = this.svg.select('g.grid[grid-id=' + this.gridId + ']');
+              } else {
+                this._gridGroup
+                // .duration(750)
+                .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
+                .call(this._grid);
 
-          } else {
-            this._gridGroup
-            // .duration(750)
-            .attr("transform", "translate(" + this.translateAmt.join(',') + ")")
-            .call(this._grid);
-
-            this._removeUncessaryElems(this._gridGroup);
-            this._setLineStyles(this._gridGroup,'line');
-
-          }
-
+                this._removeUncessaryElems(this._gridGroup);
+                this._setLineStyles(this._gridGroup,'line');
+              }
+            }
+          },5);
         },
         /**
          * Removes other axis elements which are duplicated with px-vis-axis
          *
          * @method _drawElement
          */
-        _removeUncessaryElems:function(elem){
+        _removeUncessaryElems:function(elem) {
           elem.selectAll('text').remove();
           elem.selectAll('path').remove();
         },
@@ -28186,7 +28330,7 @@ button.btn {
          *
          * @method _drawElement
          */
-        _setLineStyles:function(elem,lines){
+        _setLineStyles:function(elem,lines) {
           elem.selectAll(lines)
             .attr('fill','none')
             .attr('stroke', this.colors.grey3)
@@ -29965,7 +30109,8 @@ button.btn {
       PxVisBehavior.axisTypes,
       commonColors,
       PxVisBehavior.completeSeriesConfig,
-      PxVisBehavior.chartExtents
+      PxVisBehavior.chartExtents,
+      PxVisBehaviorD3.domainUpdate
     ],
 
     /**
@@ -30016,6 +30161,10 @@ button.btn {
 
       if(this._doesObjHaveValues(this.currentDomainY)){
         this.fire('px-vis-current-domain-y-updated', { 'dataVar': 'currentDomainY', 'data': this.currentDomainY, 'method':'set' });
+      }
+
+      if(this.domainChanged){
+        this.fire('px-vis-domain-changed-updated', { 'dataVar': 'domainChanged', 'data': this.domainChanged, 'method':'set' });
       }
     },
 
@@ -30201,9 +30350,11 @@ button.btn {
       // Set the domains
       this.set('currentDomainX', this.x.domain());
       this.set('currentDomainY', this.y.domain());
+      this.set('domainChanged', (this.domainChanged === null) ? true : !this.domainChanged);
 
       this.fire('px-vis-current-domain-x-updated', { 'dataVar': 'currentDomainX', 'data': this.currentDomainX, 'method':'set' });
       this.fire('px-vis-current-domain-y-updated', { 'dataVar': 'currentDomainY', 'data': this.currentDomainY, 'method':'set' });
+      this.fire('px-vis-domain-changed-updated', { 'dataVar': 'domainChanged', 'data': this.domainChanged, 'method':'set' });
     },
 
     _processOrdinalRange: function(axis, domainValues) {
@@ -30233,7 +30384,6 @@ button.btn {
       } else {
         //set new X domain if provided
         if(selectedDomain.x.length > 0) {
-
           this.x.domain(selectedDomain.x);
           this.currentDomainX = this.x.domain()
           this.set('currentDomainX', this.x.domain());
@@ -30242,11 +30392,13 @@ button.btn {
 
         //set new Y domain if provided
         if(selectedDomain.y.length > 0) {
-
           this.y.domain(selectedDomain.y);
           this.set('currentDomainY', this.y.domain());
           this.fire('px-vis-current-domain-y-updated', { 'dataVar': 'currentDomainY', 'data': this.currentDomainY, 'method':'set' });
         }
+
+        this.set('domainChanged', !this.domainChanged);
+        this.fire('px-vis-domain-changed-updated', { 'dataVar': 'domainChanged', 'data': this.domainChanged, 'method':'set' });
       }
     },
     _chartDataChanged: function() {
@@ -31517,7 +31669,7 @@ button.btn {
           </template>
         </template>
 
-        <px-vis-axis svg="[[svg]]" axis="[[x]]" axis-id="x" height="[[height]]" margin="[[margin]]" orientation="bottom" current-domain="[[currentDomainX]]">
+        <px-vis-axis svg="[[svg]]" axis="[[x]]" axis-id="x" height="[[height]]" margin="[[margin]]" orientation="bottom" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
         </px-vis-axis>
         <px-vis-brush svg="[[svg]]" axis="[[x]]" height="[[height]]" width="[[width]]" margin="[[margin]]" current-domain="[[currentDomainX]]" chart-domain="[[chartDomainX]]" selected-domain="[[selectedDomain]]" gradient-overlay="[[gradientOverlay]]">
         </px-vis-brush>
@@ -31546,7 +31698,8 @@ button.btn {
           PxVisBehaviorChart.precipitationPattern,
           Polymer.IronResizableBehavior,
           PxVisBehaviorChart.saveImage,
-          PxVisBehaviorChart.chartAutoResize
+          PxVisBehaviorChart.chartAutoResize,
+          PxVisBehaviorD3.domainUpdate
         ],
 
         /**
@@ -31603,7 +31756,7 @@ button.btn {
           /**
            * Can be set to override the time span shown by the navigator. Allows to use
            * the navigator without data.
-           * 
+           *
            * * Format ISO8601 strings
            * ```
            * {
@@ -31611,12 +31764,20 @@ button.btn {
            *    "to" : "2013-02-04T22:44:30.652Z"
            * }
            * ```
-           * 
+           *
            */
           range: {
             type: Object,
             observer: '_rangeChanged'
-          }
+          },
+          /**
+           * Boolean specifying if the navigator should be allowed to render empty or not
+           *
+           */
+          disableEmptyRender: {
+            type: Boolean,
+            value: false
+          },
         },
         listeners: {
           'iron-resize': '_onIronResize'
@@ -31624,9 +31785,19 @@ button.btn {
         attached: function() {
           this._onIronResize();
         },
-        _limitSeries: function(i){ 
+        _limitSeries: function(i){
           return i < this.navSeriesLimit;
         },
+        /**
+         * Forces the chart to resize and redraw
+         */
+        resizeChart: function() {
+          this._onIronResize();
+        },
+
+        /**
+         * Resizes the chart based on a container resize if prevent-resize is false (default)
+         */
         _onIronResize: function() {
           this.debounce('ironresize', function() {
             if(!this.preventResize) {
@@ -31638,11 +31809,10 @@ button.btn {
           },100);
         },
         _rangeChanged: function() {
-          
           var newXRange = [Px.moment(this.range.from),Px.moment(this.range.to)];
-              
+
           //if we don't have data create 'empty' datra with new range
-          if(!this.chartData || this.chartData.length === 0) {
+          if(!this.disableEmptyRender && (!this.chartData || this.chartData.length === 0)) {
 
             if(!this.seriesConfig || !this._doesObjHaveValues(this.seriesConfig)) {
               this.set('seriesConfig', {
@@ -31654,28 +31824,33 @@ button.btn {
                 }
               });
             }
-            
+
             this._updateDummyData(newXRange);
 
             this.set('chartExtents', {
               "x":newXRange,
               "y":[Infinity,-Infinity]});
 
-          } else {
-            var config = this.seriesConfig[Object.keys(this.seriesConfig)[0]];
-            //if we're using dummy data make sure it reflects the new range
-            if(this.chartData.length === 2 && this.chartData[0][config.y] === 0 && 
-              this.chartData[1][config.y] === 0) {
-              this._updateDummyData(newXRange);
+          } else if(this._doesObjHaveValues(this.chartExtents) && this._doesObjHaveValues(this.chartExtents.x) && this._doesObjHaveValues(this.chartExtents.x)){
+            if(!this.disableEmptyRender){
+              var config = this.seriesConfig[Object.keys(this.seriesConfig)[0]];
+              //if we're using dummy data make sure it reflects the new range
+              if(this.chartData.length === 2 && this.chartData[0][config.y] === 0 &&
+                this.chartData[1][config.y] === 0) {
+                this._updateDummyData(newXRange);
+              }
             }
-            
+
             //set range in the data
             this.set('chartExtents', {
-              "x":newXRange,
-              "y":[this.chartExtents.y[0],this.chartExtents.y[1]]});
+              "x": newXRange,
+              "y": [this.chartExtents.y[0],this.chartExtents.y[1]]
+            });
 
-            var newDomain = {x: [newXRange[0].valueOf(), newXRange[1].valueOf()], 
-                            y: this.selectedDomain.y};
+            var newDomain = {
+              'x': [newXRange[0].valueOf(), newXRange[1].valueOf()],
+              'y': this.selectedDomain.y
+            };
             this.set('selectedDomain', newDomain);
           }
         },
@@ -39983,7 +40158,8 @@ button.btn {
 
         this.thresholdText = this.thresholdGroup.append("text")
           .attr('font-size', '12px')
-          .attr('font-style','GE Inspira Sans')
+          .style('font-family','GE Inspira Sans')
+          // .attr('font-style','GE Inspira Sans')
           .attr('x', this.x(this.currentDomainX[0]) + 5 + 3)
           .attr('y', function(d,i){ return this._calcYPos(d,i,13); }.bind(this) )
           .text(function(d){ return (d.value).toFixed(2); });
@@ -39997,10 +40173,18 @@ button.btn {
 
       } else {
         this.thresholdLine
+          .attr('x1', this.x(this.currentDomainX[0]))
+          .attr('x2', this.x(this.currentDomainX[1]))
           .attr('y1', function(d){ return this.y(d.value); }.bind(this))
           .attr('y2', function(d){ return this.y(d.value); }.bind(this));
-        this.thresholdRect.attr('y', this._calcYPos.bind(this));
-        this.thresholdText.attr('y', function(d,i){ return this._calcYPos(d,i,13); }.bind(this) );
+        this.thresholdRect.attr('x', this.x(this.currentDomainX[0]) + 5)
+                          .attr('y', this._calcYPos.bind(this));
+
+        this.thresholdText.attr('x', this.x(this.currentDomainX[0]) + 5 + 3)
+                          .attr('y', function(d,i) { 
+                              return this._calcYPos(d,i,13); 
+                            }.bind(this) );
+                          
       }
 
     },
@@ -40039,9 +40223,6 @@ button.btn {
           val = (d.value < mid) ? this.y(d.value) -1 + offset: this.y(d.value) -17 + offset;
 
       return val;
-    },
-    _mouseOver: function(){
-      console.log("mouseover");
     }
   });
 </script>
@@ -42570,16 +42751,16 @@ a {
           </px-vis-svg-canvas>
 
           <div style="height:100px">
-            <px-vis-chart-navigator id="navigator" x-axis-type="time" y-axis-type="linear" width="[[width]]" margin="[[marginNav]]" default-series-config="[[defaultSeriesConfig]]" series-config="[[seriesConfig]]" include-all-series="[[includeAllSeries]]" chart-data="[[chartData]]" nav-series-limit="[[navSeriesLimit]]" chart-domain-x="[[currentDomainX]]" chart-domain-y="[[currentDomainY]]">
+            <px-vis-chart-navigator id="navigator" x-axis-type="time" y-axis-type="linear" width="[[width]]" margin="[[marginNav]]" default-series-config="[[defaultSeriesConfig]]" series-config="[[seriesConfig]]" include-all-series="[[includeAllSeries]]" chart-data="[[chartData]]" nav-series-limit="[[navSeriesLimit]]" chart-domain-x="[[currentDomainX]]" chart-domain-y="[[currentDomainY]]" range="[[range]]" disable-empty-render="">
             </px-vis-chart-navigator>
           </div>
-        </div>
+        </div> 
 
       <template is="dom-if" if="[[_sideRegister(registerLocation)]]">
         <px-vis-register id="sideRegister" height="[[height]]" width="250" units="[[units]]" complete-series-config="[[completeSeriesConfig]]" tooltip-data="[[tooltipData]]" muted-series="[[mutedSeries]]" chart-data="[[chartData]]" x-axis-type="time">
         </px-vis-register>
       </template>
-    </div> 
+    </div>
 
     <px-vis-zoom margin="[[margin]]" extents-data="[[extentsData]]" px-svg-elem="[[pxSvgElem]]">
     </px-vis-zoom>
@@ -42590,7 +42771,7 @@ a {
 
     <template is="dom-repeat" items="[[_returnKeys(completeSeriesConfig)]]">
       <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]">
-        <px-vis-line svg="[[svg]]" render-to-canvas="[[renderToCanvas]]" canvas-context="[[canvasContext]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" clip-path="[[seriesClipPath]]" muted-series="[[mutedSeries]]">
+        <px-vis-line svg="[[svg]]" render-to-canvas="[[renderToCanvas]]" canvas-context="[[canvasContext]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" clip-path="[[seriesClipPath]]" muted-series="[[mutedSeries]]" no-canvas-progressive-rendering="">
         </px-vis-line>
       </template>
       <template is="dom-if" if="[[_chartTypeScatter(item,completeSeriesConfig)]]">
@@ -42613,9 +42794,9 @@ a {
     <px-vis-gridlines svg="[[svg]]" axis="[[y]]" margin="[[margin]]" length="[[width]]" orientation="left" current-domain="[[currentDomainY]]">
     </px-vis-gridlines>
 
-    <px-vis-axis svg="[[svg]]" axis="[[x]]" margin="[[margin]]" height="[[height]]" title="Date" orientation="bottom" label-position="after" current-domain="[[currentDomainX]]">
+    <px-vis-axis id="xAxis" svg="[[svg]]" axis="[[x]]" margin="[[margin]]" height="[[height]]" orientation="bottom" label-position="after" complete-series-config="[[completeSeriesConfig]]" prevent-series-bar="" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
     </px-vis-axis>
-    <px-vis-axis svg="[[svg]]" axis="[[y]]" margin="[[margin]]" height="[[height]]" title="Hz" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" current-domain="[[currentDomainY]]">
+    <px-vis-axis id="yAxis" svg="[[svg]]" axis="[[y]]" margin="[[margin]]" height="[[height]]" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" domain-changed="[[domainChanged]]" current-domain="[[currentDomainY]]">
     </px-vis-axis>
 
     <px-vis-interaction-space svg="[[svg]]" width="[[width]]" height="[[height]]" margin="[[margin]]" x-axis-type="time" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" selection-type="[[selectionType]]">
@@ -42656,7 +42837,9 @@ a {
           PxVisBehaviorChart.chartCommon,
           PxVisBehaviorChart.precipitationPattern,
           Polymer.IronResizableBehavior,
-          PxVisBehaviorChart.saveImage
+          PxVisBehaviorChart.saveImage,
+          PxVisBehaviorD3.domainUpdate,
+          PxVisBehaviorChart.subConfiguration
         ],
 
         /**
@@ -42803,8 +42986,32 @@ a {
           pxSvgElem : {
             type: Object,
             value: function() { return {};}
-          }
+          },
+          /**
+           * Configuration object used to customize the X axis cosmetic properties.
+           * Please refer to px-vis-axis (https://github.com/PredixDev/px-vis) for a list of supported proerties
+           *
+           */
+          xAxisConfig: {
+            type: Object,
+            observer: '_xAxisConfigChanged'
+          },
+          /**
+           * Configuration object used to customize the Y axis cosmetic properties.
+           * Please refer to px-vis-axis (https://github.com/PredixDev/px-vis) for a list of supported proerties
+           *
+           */
+          yAxisConfig: {
+            type: Object,
+            observer: '_yAxisConfigChanged'
+          },
         },
+
+        observer: [
+          '_xAxisConfigChanged(xAxisConfig.*)',
+          '_yAxisConfigChanged(yAxisConfig.*)'
+        ],
+
         listeners: {
           'iron-resize': '_onIronResize'
         },
@@ -42828,6 +43035,12 @@ a {
             var key = keys[i];
             this.set(key, this.options[key]);
           }
+        },
+        _xAxisConfigChanged: function(conf) {
+          this._applyConfigToElement(this.xAxisConfig, this.$.xAxis);
+        },
+        _yAxisConfigChanged: function(conf) {
+          this._applyConfigToElement(this.yAxisConfig, this.$.yAxis);
         },
         /**
          * Overwrites default margins based on settings
@@ -62620,7 +62833,7 @@ a {
 </div>
       <template is="dom-bind">
         <h2>Example of a timeseries with many options and using old data format with the data converter</h2>
-        
+
         <px-rangepicker id="rangepicker" range="{{range}}" date-format="YYYY/MM/DD" time-format="hh:mm:ss A" show-buttons="true" show-time-zone="text">
         </px-rangepicker>
         <br>
@@ -62660,7 +62873,13 @@ a {
             ],
             &quot;showThresholdBox&quot;:false,
             &quot;includeAllSeries&quot;: true,
-            &quot;selectionType&quot;: &quot;xAxis&quot;
+            &quot;selectionType&quot;: &quot;xAxis&quot;,
+            &quot;xAxisConfig&quot;: {
+              &quot;title&quot;: &quot;Date&quot;
+            },
+            &quot;yAxisConfig&quot;: {
+              &quot;title&quot;: &quot;Hz&quot;
+            }
           }" series-config="[[seriesConfig]]" default-series-config="{
               &quot;type&quot;: &quot;line&quot;,
               &quot;yAxisUnit&quot;: &quot;Hz&quot;,
@@ -62669,7 +62888,7 @@ a {
               &quot;xMax&quot;: &quot;dynamic&quot;,
               &quot;yMin&quot;: 0,
               &quot;yMax&quot;: &quot;dynamic&quot;
-            }" chart-data="[[chartData]]" event-data="[[eventData]]" range="{{range}}">
+            }" chart-data="[[chartData]]" event-data="[[eventData]]" range="[[range]]">
         </px-vis-timeseries>
         <px-vis-data id="seriesAjax" request-data="[{
             &quot;type&quot;:&quot;line&quot;,
@@ -62690,7 +62909,11 @@ a {
         <br>
         <br>
         <h2>Example of a timeseries with mostly default data and using the new data format</h2>
-        <px-vis-timeseries width="1000" height="500" include-all-series="" selection-type="xy" chart-data="[[chartData2]]">
+        <px-vis-timeseries prevent-resize="" width="1000" height="500" include-all-series="" selection-type="xy" chart-data="[[chartData2]]" x-axis-config="{
+            &quot;title&quot;: &quot;Date&quot;
+          }" y-axis-config="{
+            &quot;title&quot;: &quot;Widgets&quot;
+          }">
         </px-vis-timeseries>
         <px-vis-data id="seriesAjax" request-data="[{
               &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json&quot;
@@ -62700,7 +62923,11 @@ a {
         <br>
         <br>
         <h2>Example of a timeseries rendering to canvas</h2>
-        <px-vis-timeseries width="1000" height="500" include-all-series="" render-to-canvas="" selection-type="xy" chart-data="[[chartData2]]">
+        <px-vis-timeseries prevent-resize="" width="1000" height="500" include-all-series="" render-to-canvas="" selection-type="xy" chart-data="[[chartData2]]" x-axis-config="{
+            &quot;title&quot;: &quot;Date&quot;
+          }" y-axis-config="{
+            &quot;title&quot;: &quot;Units&quot;
+          }">
         </px-vis-timeseries>
 
         
@@ -62708,14 +62935,18 @@ a {
         <br>
         <br>
         <h2>Example of a timeseries with a custom series configuration</h2>
-        <px-vis-timeseries width="1000" height="500" selection-type="yAxis" series-config="{
+        <px-vis-timeseries prevent-resize="" width="1000" height="500" selection-type="yAxis" series-config="{
             &quot;y&quot;:{
               &quot;type&quot;: &quot;scatter&quot;,
               &quot;name&quot;: &quot;mySeries&quot;,
               &quot;x&quot;:&quot;x&quot;,
               &quot;y&quot;:&quot;y&quot;
             }
-          }" chart-data="[[chartData3]]">
+          }" chart-data="[[chartData3]]" x-axis-config="{
+            &quot;title&quot;: &quot;Date&quot;
+          }" y-axis-config="{
+            &quot;title&quot;: &quot;Hz&quot;
+          }">
         </px-vis-timeseries>
         <px-vis-data id="seriesAjax" request-data="[{
               &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json&quot;
@@ -62725,10 +62956,14 @@ a {
         <br>
         <br>
         <h2>Example of a timeseries with a additional d3 rectangle drawn on top</h2>
-        <px-vis-timeseries id="chartCustom" options="{
+        <px-vis-timeseries id="chartCustom" prevent-resize="" options="{
             &quot;width&quot;: &quot;1000&quot;,
             &quot;height&quot;: &quot;500&quot;
-          }" include-all-series="" chart-data="[[chartData3]]"></px-vis-timeseries>
+          }" include-all-series="" chart-data="[[chartData3]]" x-axis-config="{
+            &quot;title&quot;: &quot;Date&quot;
+          }" y-axis-config="{
+            &quot;title&quot;: &quot;Temperature&quot;
+          }"></px-vis-timeseries>
     </template>
     <script>
       window.addEventListener('WebComponentsReady', function() {
@@ -62744,7 +62979,11 @@ a {
             .attr("width", 1000)
             .attr('opacity',0.25)
             .attr('fill', 'rgb(70,173,0)');
-          rangepicker.range = {"from":"2014-04-10T04:01:00.000Z","to":"2015-04-01T20:42:00.000Z"};
+
+          rangepicker.range = {
+            "from":"2014-04-10T04:01:00.000Z",
+            "to":"2015-04-01T20:42:00.000Z"
+          };
 
           btnSnap.addEventListener('click', function() {
             timeSerie.getCombinedImage(function(result) {

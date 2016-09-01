@@ -151,8 +151,8 @@ PxVisBehaviorD3.svg = {
    * for the canvas, and draw on the canvas
    */
   _drawCanvg: function(canvas, svgData, x, y, callback) {
-    var options = {ignoreDimensions: true, 
-                  ignoreClear: true, 
+    var options = {ignoreDimensions: true,
+                  ignoreClear: true,
                   renderCallback: callback,
                   offsetX: x,
                   offsetY: y,
@@ -160,7 +160,7 @@ PxVisBehaviorD3.svg = {
     canvg(canvas, svgData, options);
   },
   /**
-   * 
+   *
    */
   _nativeDrawSvgOnCanvas: function(canvas, svgData, x, y, sucessCallback, failureCallback) {
     //detect canvas tainting failures
@@ -230,7 +230,7 @@ PxVisBehaviorD3.svg = {
       childNode = childNode.nextSibling;
     }
 
-    return '<svg xmlns="' + svg.attributes.xmlns.value + '" width="' + 
+    return '<svg xmlns="' + svg.attributes.xmlns.value + '" width="' +
       svg.attributes.width.value + '" height="' + svg.attributes.height.value +
       '">' + output.join('') + '</svg>';
   }
@@ -336,6 +336,36 @@ PxVisBehaviorD3.axes = {
     currentDomainY: {
       type:Array,
       notify:true
+    }
+  }
+};
+
+/*
+    Name:
+    PxVisBehaviorD3.domainUpdate
+
+    Description:
+    Polymer behavior that provides domain update propertyt
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehaviorD3.domainUpdate
+*/
+PxVisBehaviorD3.domainUpdate = {
+  properties: {
+    /**
+     * Boolean switching when the domain(s) has(have) changed
+     *
+     * Serves as a trigger for many elements to redraw
+     *
+     * @property currentDomain
+     * @type Object
+     */
+    domainChanged: {
+      type: Boolean,
+      notify: true,
+      value: null
     }
   }
 };
@@ -455,9 +485,9 @@ PxVisBehaviorD3.selectedTimeDomain = [{
      *    "to" : "2013-02-04T22:44:30.652Z"
      * }
      * ```
-     * 
+     *
      * Updates and is updated by SelectedDomain
-     * 
+     *
      */
     range: {
       type: Object,
@@ -472,8 +502,10 @@ PxVisBehaviorD3.selectedTimeDomain = [{
       value: false
     }
   },
-  observers: ['_rangeChanged(range)',
-            '_selectedDomainChanged(selectedDomain)'],
+  observers: [
+    '_rangeChanged(range)',
+    // '_selectedDomainChanged(selectedDomain)'
+  ],
   attached: function() {
     this._isAttached = true;
   },
@@ -510,7 +542,7 @@ PxVisBehaviorD3.selectedTimeDomain = [{
       this._preventRangeUpdate = false;
     }
   }
-  
+
 }, PxVisBehaviorD3.selectedDomain];
 
 /*

@@ -1,3 +1,49 @@
+v0.2.1
+==================
+* fixed tests
+
+v0.2.0
+==================
+* Large refactor to deal with many timing issues and other bug fixes
+
+v0.1.33
+==================
+* Fix 'contains' issue on IE for label tooltip
+
+v0.1.32
+==================
+* multiaxis mouse listeners
+* update tests
+
+v0.1.31
+==================
+* clears an axis brush if that axis is removed
+
+v0.1.30
+==================
+* mute / unmute issues
+* changed the axis id
+* enabled redraw of chart through removing data
+* events fire on progressive rendering
+* added px-tooltip on axis label
+* enabled min size to axis brush
+* fixed font issues
+* fixed axis brush color
+
+v0.1.29
+==================
+* fixed bug with axes brush and new axes
+* fixed grid alignment issues
+* enabled axis name in series config
+
+v0.1.28
+==================
+* documentation updates
+
+v0.1.27
+==================
+* Fixing multi scale issue on adding axes through chart data
+
 v0.1.26
 ==================
 * Many changes associated with enabling mute / unmute on parallel coords

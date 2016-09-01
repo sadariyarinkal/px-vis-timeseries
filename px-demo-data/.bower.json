@@ -1,11 +1,10 @@
 {
   "name": "px-demo-data",
-  "version": "0.0.14",
+  "version": "0.0.15",
   "authors": [
     "GE"
   ],
   "description": "sample test data",
-  "license": "MIT",
   "ignore": [
     "**/.*",
     "node_modules",
@@ -15,11 +14,11 @@
     "tests"
   ],
   "homepage": "https://github.com/PredixDev/px-demo-data",
-  "_release": "0.0.14",
+  "_release": "0.0.15",
   "_resolution": {
     "type": "version",
-    "tag": "v0.0.14",
-    "commit": "aa154b6c7a8b067e1341e956dd2837246d7cac66"
+    "tag": "v0.0.15",
+    "commit": "cb9e950f65a66d98c408f14cc026264e48a6a753"
   },
   "_source": "https://github.com/PredixDev/px-demo-data.git",
   "_target": "~0.0.1",

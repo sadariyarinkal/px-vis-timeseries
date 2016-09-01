@@ -1,3 +1,20 @@
+v0.2.1
+==================
+* fixed test
+
+v0.2.0
+==================
+* update to px-vis 2.0
+* added axis configuration
+
+v0.1.15
+==================
+* fixed demo page for IE
+
+v0.1.14
+==================
+* updating for axis changes
+
 v0.1.13
 ==================
 * adding new png

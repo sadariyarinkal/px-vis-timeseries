@@ -53,6 +53,26 @@ Element which draws lines series onto the chart
     ],
 
     /**
+     * px-vis-progressive-rendering-started, fired when a canvas with progressive rendering
+     * enabled starts rendering
+     * evt.details contains:
+     * { numberOfFrames: the number of frames that will be used to render,
+     * }
+     *
+     * @event px-vis-progressive-rendering-started
+     */
+
+    /**
+     * px-vis-progressive-rendering-ended, fired when a canvas with progressive rendering
+     * enabled has finished rendering
+     * evt.details contains:
+     * { numberOfFrames: the number of frames that have been used to render,
+     * }
+     *
+     * @event px-vis-progressive-rendering-ended
+     */
+
+    /**
      * Properties block, expose attribute values to the DOM via 'reflect'
      *
      * @property properties
@@ -260,6 +280,7 @@ Element which draws lines series onto the chart
     drawElement: function() {
       this.debounce('draw',function(){
         if(!this.renderToCanvas) {
+
           // we need to wrap the data differently depending on if we are drawing many lines or just one line
           if(this.parallelCoordinates) {
             var data = this.chartData;
@@ -268,7 +289,6 @@ Element which draws lines series onto the chart
             var data = [this.chartData];
             this._defineSingleLine();
           }
-
           // checks to see if the group already exists. If not, create; if so, update
           if(this._isObjEmpty(this.lineGroup)) {
             // draw the path
@@ -276,15 +296,16 @@ Element which draws lines series onto the chart
               .attr("series-id", 'line_' + this.seriesId)
               .attr("class", "series-line");
           }
+
           // set our data
-          this.lineBuilder = this.lineGroup.selectAll('path.series-line')
+           var lineBuilder = this.lineGroup.selectAll('path.series-line')
             .data(data);
 
           // When datapoints disappear from our data, remove them
-          this.lineBuilder.exit().remove();
+          lineBuilder.exit().remove();
 
           // When datapoints are added to our data, add stuff
-          this.lineBuilder.enter()
+          lineBuilder.enter()
             .append('path')
             .attr("class", "series-line")
             .attr("series-id", function(d,i){
@@ -292,7 +313,7 @@ Element which draws lines series onto the chart
             }.bind(this))
             .attr('fill','none')
           // When datapoints are added OR this funtion is run, draw stuff
-          .merge(this.lineBuilder)
+          .merge(lineBuilder)
             .attr("d", this.line)
             // TODO add ability to color by category
             .attr('stroke',function(d,i){
@@ -349,7 +370,6 @@ Element which draws lines series onto the chart
 
           //Render data progressively
           this.canvasContext.lineWidth = 1;
-
           if(this.noCanvasProgressiveRendering) {
             this._renderAtOnce(data);
           } else {
@@ -436,6 +456,8 @@ Element which draws lines series onto the chart
      */
     _renderProgressively: function(data, numberOfFrames) {
 
+      this.fire('px-vis-line-progressive-rendering-started', {numberOfFrames: numberOfFrames});
+
         var batches = [],
             currentIndex = 0,
             j = 0,
@@ -502,6 +524,7 @@ Element which draws lines series onto the chart
         } else {
           //finished drawing, reset drawing request counter
           _this._progressiveRenderingCounter = 0;
+          _this.fire('px-vis-line-progressive-rendering-ended', {numberOfFrames: numberOfFrames});
         }
       };
 
@@ -533,7 +556,8 @@ Element which draws lines series onto the chart
         } else {
           //end, clean up
           _this._clearCanvasMargins();
-          this._progressiveRenderingCounter = 0;
+          _this._progressiveRenderingCounter = 0;
+          _this.fire('px-vis-line-progressive-rendering-ended', {numberOfFrames: numberOfFrames});
         }
       };
       //END PROCESSING FUNCTIONS
@@ -668,7 +692,7 @@ Element which draws lines series onto the chart
      */
      _muteLine:function(){
        this.linePath.attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
-         .attr('stroke-opacity',0);
+         .attr('stroke-opacity',0.3);
      },
   });
 </script>
