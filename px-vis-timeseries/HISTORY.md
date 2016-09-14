@@ -1,3 +1,15 @@
+v0.2.5
+==================
+* added resolutions
+
+v0.2.4
+==================
+* added axis type
+
+v0.2.3
+==================
+* uses new tooltip
+
 v0.2.2
 ==================
 * added ability to disable navigator

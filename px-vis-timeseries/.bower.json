@@ -1,6 +1,6 @@
 {
   "name": "px-vis-timeseries",
-  "version": "0.2.2",
+  "version": "0.2.5",
   "main": [
     "px-vis-timeseries.html"
   ],
@@ -20,7 +20,7 @@
     "px-demo-data": "~0.0.1",
     "px-datetime-common": "~0.5.0",
     "px-colors-design": "~0.2.15",
-    "px-vis": "~0.2.0",
+    "px-vis": "~0.3.0",
     "iron-resizable-behavior": "^1.0.4"
   },
   "devDependencies": {
@@ -45,12 +45,23 @@
     "px-rangepicker": "^1.0.0",
     "iron-ajax": "PolymerElements/iron-ajax#~1.1.1"
   },
+  "resolutions": {
+    "px-tooltip": "vis-tooltip",
+    "px-datetime-common": "~0.5.0",
+    "px-theme": "~0.8.0",
+    "px-typography-design": "~0.3.2",
+    "px-dropdown": "^0.10.1",
+    "px-datetime-range-field": "~0.3.0",
+    "px-datetime-range-panel": "~0.2.0",
+    "px-datetime-field": "~0.4.0",
+    "px-calendar-picker": "~0.3.0"
+  },
   "homepage": "https://github.com/PredixDev/px-vis-timeseries",
-  "_release": "0.2.2",
+  "_release": "0.2.5",
   "_resolution": {
     "type": "version",
-    "tag": "v0.2.2",
-    "commit": "5253ecbcc706554257bcc9becf540cb5a4b2f38c"
+    "tag": "v0.2.5",
+    "commit": "d2835e914158d3dbbc71f43141c218f95a591468"
   },
   "_source": "https://github.com/PredixDev/px-vis-timeseries.git",
   "_target": "^0.2.1",

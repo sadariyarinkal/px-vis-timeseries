@@ -13391,6 +13391,7 @@ PxVisBehaviorChart.precipitationPattern = {
     'px-vis-series-clip-path-updated' : '_updateLocalProperty',
     'px-vis-svg-element-updated'      : '_updateLocalProperty',
     'px-vis-domain-changed-updated'   : '_updateLocalProperty',
+    'px-vis-mouse-rect-updated'       : '_updateLocalProperty',
 
     'px-vis-canvas-context-updated'   : '_updateGlobalProperty',
     'px-vis-muted-series-updated'     : '_updateGlobalProperty',
@@ -13587,17 +13588,14 @@ PxVisBehaviorTime.datetime = {
     /**
      * Defines the format for the first datetime string. The first datetime is shown in normal font weight.
      *
-     * Default is the first datetime string is TIME presented as "12:00:00 +0000"
+     * Default is the first datetime string is TIME presented as "15:00:00 +0000"
      *
      * For valid string formats, see: http://momentjs.com/docs/#/displaying/
      *
-     * @property firstDateTimeFormat
-     * @type string
-     * @default hh:mm:ss ZZ
     */
     firstDateTimeFormat:{
       type:String,
-      value: 'hh:mm:ss ZZ'
+      value: 'HH:mm:ss  ZZ'
     },
     /**
      * Defines the format for the second datetime string. The second datetime is shown in bold font weight.
@@ -21845,6 +21843,7 @@ button.btn {
 </script>
 
 
+
 <dom-module id="px-tooltip" assetpath="../px-tooltip/">
   
   <template><style>
@@ -22295,124 +22294,154 @@ a {
   visibility: hidden !important; }
 
 .flex {
+  display: -webkit-flex;
   display: -ms-flexbox;
   display: flex; }
 
 .inline--flex {
+  display: -webkit-inline-flex;
   display: -ms-inline-flexbox;
   display: inline-flex; }
 
 .flex--row {
-  -ms-flex-direction: row;
-      flex-direction: row; }
+  -webkit-flex-direction: row;
+      -ms-flex-direction: row;
+          flex-direction: row; }
 
 .flex--row--rev {
-  -ms-flex-direction: row-reverse;
-      flex-direction: row-reverse; }
+  -webkit-flex-direction: row-reverse;
+      -ms-flex-direction: row-reverse;
+          flex-direction: row-reverse; }
 
 .flex--col {
-  -ms-flex-direction: column;
-      flex-direction: column; }
+  -webkit-flex-direction: column;
+      -ms-flex-direction: column;
+          flex-direction: column; }
 
 .flex--col--rev {
-  -ms-flex-direction: column-reverse;
-      flex-direction: column-reverse; }
+  -webkit-flex-direction: column-reverse;
+      -ms-flex-direction: column-reverse;
+          flex-direction: column-reverse; }
 
 .flex--nowrap {
-  -ms-flex-wrap: nowrap;
-      flex-wrap: nowrap; }
+  -webkit-flex-wrap: nowrap;
+      -ms-flex-wrap: nowrap;
+          flex-wrap: nowrap; }
 
 .flex--wrap {
-  -ms-flex-wrap: wrap;
-      flex-wrap: wrap; }
+  -webkit-flex-wrap: wrap;
+      -ms-flex-wrap: wrap;
+          flex-wrap: wrap; }
 
 .flex--wrap--rev {
-  -ms-flex-wrap: wrap-reverse;
-      flex-wrap: wrap-reverse; }
+  -webkit-flex-wrap: wrap-reverse;
+      -ms-flex-wrap: wrap-reverse;
+          flex-wrap: wrap-reverse; }
 
 .flex--left {
-  -ms-flex-pack: start;
-      justify-content: flex-start; }
+  -webkit-justify-content: flex-start;
+      -ms-flex-pack: start;
+          justify-content: flex-start; }
 
 .flex--center {
-  -ms-flex-pack: center;
-      justify-content: center; }
+  -webkit-justify-content: center;
+      -ms-flex-pack: center;
+          justify-content: center; }
 
 .flex--right {
-  -ms-flex-pack: end;
-      justify-content: flex-end; }
+  -webkit-justify-content: flex-end;
+      -ms-flex-pack: end;
+          justify-content: flex-end; }
 
 .flex--justify {
-  -ms-flex-pack: justify;
-      justify-content: space-between; }
+  -webkit-justify-content: space-between;
+      -ms-flex-pack: justify;
+          justify-content: space-between; }
 
 .flex--spaced {
-  -ms-flex-pack: distribute;
-      justify-content: space-around; }
+  -webkit-justify-content: space-around;
+      -ms-flex-pack: distribute;
+          justify-content: space-around; }
 
 .flex--top {
-  -ms-flex-align: start;
-      align-items: flex-start; }
+  -webkit-align-items: flex-start;
+      -ms-flex-align: start;
+          align-items: flex-start; }
 
 .flex--middle {
-  -ms-flex-align: center;
-      align-items: center; }
+  -webkit-align-items: center;
+      -ms-flex-align: center;
+          align-items: center; }
 
 .flex--bottom {
-  -ms-flex-align: end;
-      align-items: flex-end; }
+  -webkit-align-items: flex-end;
+      -ms-flex-align: end;
+          align-items: flex-end; }
 
 .flex--stretch {
-  -ms-flex-align: stretch;
-      align-items: stretch; }
+  -webkit-align-items: stretch;
+      -ms-flex-align: stretch;
+          align-items: stretch; }
 
 .flex--baseline {
-  -ms-flex-align: baseline;
-      align-items: baseline; }
+  -webkit-align-items: baseline;
+      -ms-flex-align: baseline;
+          align-items: baseline; }
 
 .flex--top--multi {
-  -ms-flex-line-pack: start;
-      align-content: flex-start; }
+  -webkit-align-content: flex-start;
+      -ms-flex-line-pack: start;
+          align-content: flex-start; }
 
 .flex--middle--multi {
-  -ms-flex-line-pack: center;
-      align-content: center; }
+  -webkit-align-content: center;
+      -ms-flex-line-pack: center;
+          align-content: center; }
 
 .flex--bottom--multi {
-  -ms-flex-line-pack: end;
-      align-content: flex-end; }
+  -webkit-align-content: flex-end;
+      -ms-flex-line-pack: end;
+          align-content: flex-end; }
 
 .flex--stretch--multi {
-  -ms-flex-line-pack: stretch;
-      align-content: stretch; }
+  -webkit-align-content: stretch;
+      -ms-flex-line-pack: stretch;
+          align-content: stretch; }
 
 .flex--justify--multi {
-  -ms-flex-line-pack: justify;
-      align-content: space-between; }
+  -webkit-align-content: space-between;
+      -ms-flex-line-pack: justify;
+          align-content: space-between; }
 
 .flex--spaced--multi {
-  -ms-flex-line-pack: distribute;
-      align-content: space-around; }
+  -webkit-align-content: space-around;
+      -ms-flex-line-pack: distribute;
+          align-content: space-around; }
 
 .flex__item {
-  -ms-flex: 1;
-      flex: 1; }
+  -webkit-flex: 1;
+      -ms-flex: 1;
+          flex: 1; }
 
 .flex__item--top {
-  -ms-flex-item-align: start;
-      align-self: flex-start; }
+  -webkit-align-self: flex-start;
+      -ms-flex-item-align: start;
+          align-self: flex-start; }
 
 .flex__item--middle {
-  -ms-flex-item-align: center;
-      align-self: center; }
+  -webkit-align-self: center;
+      -ms-flex-item-align: center;
+          align-self: center; }
 
 .flex__item--bottom {
-  -ms-flex-item-align: end;
-      align-self: flex-end; }
+  -webkit-align-self: flex-end;
+      -ms-flex-item-align: end;
+          align-self: flex-end; }
 
 .flex__item--baseline {
-  -ms-flex-item-align: baseline;
-      align-self: baseline; }
+  -webkit-align-self: baseline;
+      -ms-flex-item-align: baseline;
+          align-self: baseline; }
 
 .viewport {
   width: 100%;
@@ -22427,14 +22456,14 @@ a {
   display: block;
   position: absolute !important;
   outline: none;
-  z-index: 1002; }
+  z-index: 1002;
+  pointer-events: none; }
 
 #tooltip {
+  pointer-events: none;
   outline: none;
   padding: 15px;
-  background-color: black;
   margin: 15px;
-  color: white;
   max-width: 400px;
   white-space: normal;
   overflow-wrap: break-word; }
@@ -22444,29 +22473,18 @@ a {
     margin: 0; }
 
 div#carat {
+  pointer-events: none;
   position: absolute;
   width: 0;
   height: 0; }
   div#carat.bottom {
-    top: 8px;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-bottom: 7px solid black; }
+    top: 8px; }
   div#carat.top {
-    top: 0;
-    border-left: 7px solid transparent;
-    border-right: 7px solid transparent;
-    border-top: 7px solid black; }
+    top: 0; }
   div#carat.left {
-    right: 8px;
-    border-top: 7px solid transparent;
-    border-bottom: 7px solid transparent;
-    border-left: 7px solid black; }
+    right: 8px; }
   div#carat.right {
-    left: 8px;
-    border-top: 7px solid transparent;
-    border-bottom: 7px solid transparent;
-    border-right: 7px solid black; }
+    left: 8px; }
 
 /*------------------------------------*    #CLEARFIX
 \*------------------------------------*/
@@ -22503,397 +22521,484 @@ div#carat {
 
 .u-1\/2 {
   width: 50% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-1\/3 {
   width: 33.3333333333% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-2\/3 {
   width: 66.6666666667% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-1\/4 {
   width: 25% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-2\/4 {
   width: 50% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-3\/4 {
   width: 75% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-1\/6 {
   width: 16.6666666667% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-2\/6 {
   width: 33.3333333333% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-3\/6 {
   width: 50% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-4\/6 {
   width: 66.6666666667% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
 .u-5\/6 {
   width: 83.3333333333% !important;
-  -ms-flex: none !important;
-      flex: none !important; }
+  -webkit-flex: none !important;
+      -ms-flex: none !important;
+          flex: none !important; }
 
-@media screen and (max-width: 47.9375rem) {
+@media screen and (max-width: 47.9rem) {
   .u-1\/1-palm {
     width: 100% !important; }
   .u-1\/2-palm {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-palm {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-palm {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-palm {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-palm {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-palm {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-palm {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-palm {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-palm {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-palm {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-palm {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
-@media screen and (min-width: 48rem) and (max-width: 68.204166667rem) {
+@media screen and (min-width: 48rem) and (max-width: 63.9rem) {
   .u-1\/1-lap {
     width: 100% !important; }
   .u-1\/2-lap {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-lap {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-lap {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-lap {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-lap {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-lap {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-lap {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-lap {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-lap {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-lap {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-lap {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
 @media screen and (min-width: 48rem) {
   .u-1\/1-lap-and-up {
     width: 100% !important; }
   .u-1\/2-lap-and-up {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-lap-and-up {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-lap-and-up {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-lap-and-up {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-lap-and-up {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-lap-and-up {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-lap-and-up {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-lap-and-up {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-lap-and-up {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-lap-and-up {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-lap-and-up {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
-@media screen and (max-width: 68.2rem) {
+@media screen and (max-width: 63.9rem) {
   .u-1\/1-portable {
     width: 100% !important; }
   .u-1\/2-portable {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-portable {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-portable {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-portable {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-portable {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-portable {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-portable {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-portable {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-portable {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-portable {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-portable {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
-@media screen and (min-width: 68.266666667rem) {
+@media screen and (min-width: 63.9rem) {
   .u-1\/1-desk {
     width: 100% !important; }
   .u-1\/2-desk {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-desk {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-desk {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-desk {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-desk {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-desk {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-desk {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-desk {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-desk {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-desk {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-desk {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
-@media screen and (min-width: 80rem) {
+@media screen and (min-width: 100%) {
   .u-1\/1-desk-wide {
     width: 100% !important; }
   .u-1\/2-desk-wide {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-desk-wide {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-desk-wide {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-desk-wide {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-desk-wide {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-desk-wide {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-desk-wide {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-desk-wide {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-desk-wide {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-desk-wide {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-desk-wide {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
 @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi), (min-resolution: 2dppx) {
   .u-1\/1-retina {
     width: 100% !important; }
   .u-1\/2-retina {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/3-retina {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/3-retina {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/4-retina {
     width: 25% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/4-retina {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/4-retina {
     width: 75% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-1\/6-retina {
     width: 16.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-2\/6-retina {
     width: 33.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-3\/6-retina {
     width: 50% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-4\/6-retina {
     width: 66.6666666667% !important;
-    -ms-flex: none !important;
-        flex: none !important; }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; }
   .u-5\/6-retina {
     width: 83.3333333333% !important;
-    -ms-flex: none !important;
-        flex: none !important; } }
+    -webkit-flex: none !important;
+        -ms-flex: none !important;
+            flex: none !important; } }
 
 #tooltip {
-  background-color: black;
   border-radius: 0.2666666667rem; }
   #tooltip p {
     margin: 0;
@@ -22902,11 +23007,50 @@ div#carat {
             hyphens: auto; }
     #tooltip p:first-child {
       text-transform: capitalize; }
+  #tooltip.dark {
+    background-color: black;
+    color: white; }
+  #tooltip.light {
+    background-color: white;
+    color: black;
+    border: 1px solid #7c7c84; }
+
+div#carat.bottom {
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent; }
+  div#carat.bottom.dark {
+    border-bottom: 7px solid black; }
+  div#carat.bottom.light {
+    border-bottom: 7px solid white; }
+
+div#carat.top {
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent; }
+  div#carat.top.dark {
+    border-top: 7px solid black; }
+  div#carat.top.light {
+    border-top: 7px solid white; }
+
+div#carat.left {
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent; }
+  div#carat.left.dark {
+    border-left: 7px solid black; }
+  div#carat.left.light {
+    border-left: 7px solid white; }
+
+div#carat.right {
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent; }
+  div#carat.right.dark {
+    border-right: 7px solid black; }
+  div#carat.right.light {
+    border-right: 7px solid white; }
 
 </style>
     <div id="tooltipWrapper" class="hidden">
-      <div id="carat"></div>
-      <div id="tooltip">
+      <div id="carat" class$="[[_getTooltipStyle(tooltipStyle)]]"></div>
+      <div id="tooltip" class$="[[_getTooltipStyle(tooltipStyle)]]">
         <div id="message">
           <span>{{ tooltipMessage }}</span>
           <content></content>
@@ -23045,17 +23189,39 @@ div#carat {
       _tooltipParent: {
         type: Object,
         value: function() {return {};}
+      },
+      followMouse: {
+        type: Boolean,
+        value: false
+      },
+      mouseCoords: {
+        type: Array
+      },
+      tooltipStyle: {
+        type: String,
+        value: "dark"
       }
     },
+    observers: [
+      '_onMouseMove(mouseCoords.*)'
+    ],
     listeners: {
       'iron-resize': '_onIronResize'
     },
     attached: function() {
       // we want to make sure the target exists-
       if(this._target){
-        this.listen(this._target, 'mouseenter', '_show');
-        this.listen(this._target, 'mouseleave', '_hide');
-        this.listen(this._target, 'mousedown', '_hide');
+        if(Array.isArray(this._target)){
+          for(var i =0; i < this._target.length; i++){
+            this.listen(this._target[i], 'mouseenter', '_show');
+            this.listen(this._target[i], 'mouseleave', '_hide');
+            this.listen(this._target[i], 'mousedown', '_hide');
+          }
+        } else {
+          this.listen(this._target, 'mouseenter', '_show');
+          this.listen(this._target, 'mouseleave', '_hide');
+          this.listen(this._target, 'mousedown', '_hide');
+        }
       }
       else {
         //make sure tooltip find its parent if it has no for
@@ -23063,9 +23229,41 @@ div#carat {
       }
     },
     detached: function() {
-      this.unlisten(this._target, 'mouseenter', '_show');
-      this.unlisten(this._target, 'mouseleave', '_hide');
-      this.unlisten(this._target, 'mousedown', '_hide');
+      if(Array.isArray(this._target)){
+        for(var i =0; i < this._target.length; i++){
+          this.unlisten(this._target[i], 'mouseenter', '_show');
+          this.unlisten(this._target[i], 'mouseleave', '_hide');
+          this.unlisten(this._target[i], 'mousedown', '_hide');
+        }
+      } else {
+        this.unlisten(this._target, 'mouseenter', '_show');
+        this.unlisten(this._target, 'mouseleave', '_hide');
+        this.unlisten(this._target, 'mousedown', '_hide');
+      }
+    },
+
+    _getTooltipStyle: function(){
+      return this.tooltipStyle;
+    },
+
+    _onMouseMove: function(){
+      if(this.followMouse && this.thisRect){
+        if(this.orientation === 'auto') {
+
+          //auto positioning
+          this._autoPosition();
+        }
+        else if(this.smartOrientation) {
+
+          //smart positioning
+          this._doPosition(this._findValidSmartOrientation(this.orientation));
+        }
+        else {
+
+          //hard coded positioning
+          this._doPosition(this.orientation);
+        }
+      }
     },
     /**
      * @method _onFor
@@ -23075,14 +23273,28 @@ div#carat {
      */
     _onFor:function(){
       if(this._target){
-        this.unlisten(this._target, 'mouseenter', '_show');
-        this.unlisten(this._target, 'mouseleave', '_hide');
+        if(Array.isArray(this._target)){
+          for(var i =0; i < this._target.length; i++){
+            this.unlisten(this._target[i], 'mouseenter', '_show');
+            this.unlisten(this._target[i], 'mouseleave', '_hide');
+          }
+        } else {
+          this.unlisten(this._target, 'mouseenter', '_show');
+          this.unlisten(this._target, 'mouseleave', '_hide');
+        }
       }
       this.target = this._getTarget();
       this._target = this.target;
       if(this._target){
-        this.listen(this._target, 'mouseenter', '_show');
-        this.listen(this._target, 'mouseleave', '_hide');
+        if(Array.isArray(this._target)){
+          for(var i =0; i < this._target.length; i++){
+            this.listen(this._target[i], 'mouseenter', '_show');
+            this.listen(this._target[i], 'mouseleave', '_hide');
+          }
+        } else {
+          this.listen(this._target, 'mouseenter', '_show');
+          this.listen(this._target, 'mouseleave', '_hide');
+        }
       }
     },
     /**
@@ -23115,7 +23327,12 @@ div#carat {
 
       if(this.for && typeof(this.for) === 'string') {
         target = Polymer.dom(parentNode).querySelector('#' + this.for);
-      }else if(this.for && typeof(this.for) === 'object') {
+      } else if(this.for && Array.isArray(this.for) && typeof(this.for[0]) === 'string'){
+        target = [];
+        for(var i =0; i < this.for.length; i++){
+          target.push(Polymer.dom(parentNode).querySelector('#' + this.for[i]));
+        }
+      } else if(this.for && typeof(this.for) === 'object') {
         target = this.for;
       }
       //DOCUMENT_FRAGMENT_NODE
@@ -23213,7 +23430,7 @@ div#carat {
        // using this method so that we can calculate the best position
        // in the _positionXXX methods without having to do recursion, plus
        // avoiding issues when in tables in IE and inside scroll panes
-       this.targetRect = this._target.getBoundingClientRect();
+       this.targetRect = this.followMouse ? this.getBoundingClientRect() : this._target.getBoundingClientRect();
        this.thisRect = this.getBoundingClientRect();
        this.margin = parseInt(getComputedStyle(this.$.tooltip).marginTop.replace('px', ''));
 
@@ -23420,9 +23637,15 @@ div#carat {
       this.$.carat.style.left = (this._getTooltipWidth() / 2) - (this._getCaratWidth() / 2) + 'px';
       this.$.carat.style.top = (this._getTooltipHeight() - this.margin) + 'px';
 
-      // position the tooltip itself
-      this.style.left = this.getTargetPositionCenterOfLeftRight() - (this._getTooltipWidth() / 2) + 'px';
-      this.style.top = this._getTargetPositionTop() - this._getTooltipHeight() + (this.margin / 2) - 5 + 'px';
+      if(this.followMouse){
+        this.style.left = this.mouseCoords[0] - (this._getTooltipWidth() / 2) + 'px'
+        this.style.top = this.mouseCoords[1] - this._getTooltipHeight() + (this.margin / 2) - 10 + 'px';
+
+      } else {
+        // position the tooltip itself
+        this.style.left = this.getTargetPositionCenterOfLeftRight() - (this._getTooltipWidth() / 2) + 'px';
+        this.style.top = this._getTargetPositionTop() - this._getTooltipHeight() + (this.margin / 2) - 5 + 'px';
+      }
 
     },
     /**
@@ -23438,9 +23661,14 @@ div#carat {
       this.$.carat.style.left = (this._getTooltipWidth() / 2) - (this._getCaratWidth() / 2) + 'px';
       this.$.carat.style.top = null;
 
-      // position the tooltip itself
-      this.style.left = this.getTargetPositionCenterOfLeftRight() - (this._getTooltipWidth() / 2) + 'px';
-      this.style.top = this._getTargetPositionBottom() - this._getCaratHeight() + 5 + 'px';
+      if(this.followMouse){
+        this.style.left = this.mouseCoords[0] - (this._getTooltipWidth() / 2) + 'px'
+        this.style.top = this.mouseCoords[1] - this._getCaratHeight() + 10 + 'px';
+      } else {
+        // position the tooltip itself
+        this.style.left = this.getTargetPositionCenterOfLeftRight() - (this._getTooltipWidth() / 2) + 'px';
+        this.style.top = this._getTargetPositionBottom() - this._getCaratHeight() + 5 + 'px';
+      }
     },
     /**
      * @method _positionLeft
@@ -23456,11 +23684,17 @@ div#carat {
       this.$.carat.style.left = null;
       this.$.carat.style.top = (this._getTooltipHeight() / 2) - this._getCaratWidth() + 'px';
 
-      top = Math.round(this.getTargetPositionCenterOfTopBottom() - (this._getTooltipHeight() / 2)) + 'px';
+      if(this.followMouse){
+        this.style.left = this.mouseCoords[0] - this._getTooltipWidth() + this.margin / 2 - 10 + 'px';
+        this.style.top = this.mouseCoords[1]  - (this._getTooltipHeight() / 2) + 'px';
 
-      // position the tooltip itself
-      this.style.left = this._getTargetPositionLeft() - this._getTooltipWidth() + this.margin / 2 - 5 + 'px';
-      this.style.top = top;
+      } else {
+        top = Math.round(this.getTargetPositionCenterOfTopBottom() - (this._getTooltipHeight() / 2)) + 'px';
+
+        // position the tooltip itself
+        this.style.left = this._getTargetPositionLeft() - this._getTooltipWidth() + this.margin / 2 - 5 + 'px';
+        this.style.top = top;
+      }
     },
     /**
      * @method _positionRight
@@ -23476,11 +23710,17 @@ div#carat {
       this.$.carat.style.left = null;
       this.$.carat.style.top = (this._getTooltipHeight() / 2) - (this._getCaratWidth()) + 'px';
 
-      top = Math.round(this.getTargetPositionCenterOfTopBottom() - (this._getTooltipHeight() / 2)) + 'px';
+      if(this.followMouse){
+        this.style.left = this.mouseCoords[0] - this._getCaratWidth() + 10 + 'px';
+        this.style.top = this.mouseCoords[1]  - (this._getTooltipHeight() / 2) + 'px';
 
-      // position the tooltip itself
-      this.style.left = this._getTargetPositionRight() - this._getCaratWidth() + 5 + 'px';
-      this.style.top = top;
+      } else {
+        top = Math.round(this.getTargetPositionCenterOfTopBottom() - (this._getTooltipHeight() / 2)) + 'px';
+
+        // position the tooltip itself
+        this.style.left = this._getTargetPositionRight() - this._getCaratWidth() + 5 + 'px';
+        this.style.top = top;
+      }
     },
     /**
      * @method _styleTheCaratAs
@@ -26462,6 +26702,23 @@ button.btn {
           titleTruncation: {
             type: Boolean,
             value: false
+          },
+          /**
+          * An String that specifies the format of the ticks
+          *
+          * https://github.com/d3/d3-time-format
+          */
+          tickFormat: {
+            type: String
+          },
+          /**
+          * A string specifying the type of axis. Used only for tick formating. Valid entries are:
+          * - `time`
+          * - `linear`
+          */
+          axisType: {
+            type: String,
+            value: "linear"
           }
         },
 
@@ -26523,10 +26780,25 @@ button.btn {
           // this._axis.ticks(10);
           // change default ticks with specific time
           // this._axis.ticks(d3.time.months, 1);
-          // this._axis.ticks(d3.time.days, 7);
-          // this._axis.ticks(d3.time.minutes, 15);
+          // this._axis.ticks(Px.d3.time.days, 7);
+          //
+
+          // if(this.ticks && this._doesObjHaveValues(ticks)){
+          //   this._axis.ticks(this.ticks.interval, this.ticks.format);
+          // }
+          // https://github.com/mbostock/d3/wiki/Formatting#d3_format
+          if(this.tickFormat){
+            if(this.axisType === 'time'){
+              this._axis.tickFormat(Px.d3.timeFormat(this.tickFormat));
+            } else if(this.axisType === 'linear'){
+              this._axis.tickFormat(Px.d3.format(this.tickFormat));
+            }
+          }
+
           if(this.tickValues && this.tickValues.length > 0){
-            this._axis.tickValues(this.tickValues);
+            if(!isNaN(this.axis.domain()[0]) && !isNaN(this.axis.domain()[1])){
+              this._axis.tickValues(this.tickValues);
+            }
           }
 
           // controls the tick mark size for ticks with numbers
@@ -26535,9 +26807,6 @@ button.btn {
           // controls the first and last ticks
           // TODO rename var names to match new d3
           this._axis.tickSizeOuter(this.outerTickSize);
-
-          // https://github.com/mbostock/d3/wiki/Formatting#d3_format
-          // this._axis.tickFormat(d3.format(",.0f"));
 
           // TODO rename var names to match new d3
           if(this.labelPosition !== 'center'){
@@ -26861,7 +27130,7 @@ button.btn {
               if(this.titleTruncation){
                 newTitle = this._truncateName(title, truncationLength) + this._currentUnits;
               } else {
-                newTitle = title;
+                newTitle = title + this._currentUnits;
               }
               if(newTitle !== oldTitle) {
                 this.fire('px-vis-axis-displayed-title-changed', {displayedTitle: newTitle, title: this.title, id: this.seriesId});
@@ -28191,7 +28460,7 @@ button.btn {
            */
           _gridGroup: {
             type: Object,
-            value: function() {return{};}
+            value: function() { return{}; }
           },
           /**
            * A unique ID for the grid
@@ -28216,6 +28485,11 @@ button.btn {
             type: Array,
             value:function() { return [0,0]; }
           },
+
+          _drawGrid:  {
+            type: Boolean,
+            value: true
+          }
         },
 
         observers: [
@@ -28228,6 +28502,16 @@ button.btn {
           if(!this.gridId) {
             this.set('gridId', this.generateRandomID('grid_'));
           }
+        },
+
+        detached: function() {
+          if(this._doesObjHaveValues(this._gridGroup)){
+            this._gridGroup.remove();
+            this._gridGroup = {};
+          }
+
+          this._drawGrid = false;
+
         },
 
         /**
@@ -28275,7 +28559,7 @@ button.btn {
          */
         drawElement: function() {
           this.debounce('draw_grid', function() {
-            if(this._doesObjHaveValues(this.currentDomain)) {
+            if(this._doesObjHaveValues(this.currentDomain) && this._drawGrid) {
               this.defineGrid();
               // this._grid.tickValues(this.axis.domain());
               if(this.orientation === 'bottom') {
@@ -28295,7 +28579,6 @@ button.btn {
 
                 this._removeUncessaryElems(this._gridGroup);
                 this._setLineStyles(this._gridGroup,'line');
-
                 // the first tick overlaps the x-axis path and is unnessary
                 // TODO make sure this doesnt get us in trouble in different min y values
                 // TODO What if there is no x-axis? How to do this better?
@@ -33168,6 +33451,9 @@ button.btn {
       _actionArea: {
         type: Object,
         value: function() {return {};}
+      },
+      mouseRect: {
+        type: Object
       }
     },
 
@@ -33188,6 +33474,10 @@ button.btn {
 
       if(this._doesObjHaveValues(this.tooltipData)){
         this.fire('px-vis-tooltip-updated', { 'dataVar': 'tooltipData', 'data': this.tooltipData, 'method':'set' });
+      }
+
+      if(this._doesObjHaveValues(this.mouseRect)){
+        this.fire('px-vis-mouse-rect-updated', {'data': this.mouseRect, 'dataVar': 'mouseRect', 'method': 'set'});
       }
 
     },
@@ -33221,13 +33511,13 @@ button.btn {
           .on("mousemove.action", this._updateActionBox.bind(this))
           .on("mouseup.action", this._finishActionBox.bind(this))
           .style("cursor","crosshair");
+
+          this.set("mouseRect", this._rect.node());
+          this.fire('px-vis-mouse-rect-updated', {'data': this.mouseRect, 'dataVar': 'mouseRect', 'method': 'set'});
       } else {
         this._rect.attr("width", this.width - this.margin.left - this.margin.right)
         .attr("height", this.height - this.margin.bottom - this.margin.top);
       }
-
-
-
 
       // TODO touchevents
       // TODO if there is no register tooltip or cursor, set .tooltip listeners to null
@@ -37169,8 +37459,8 @@ button.btn {
         -ms-flex: none !important;
             flex: none !important; } }
 
-.seriesData {
-  color: #7c7c84; }
+.seriesName {
+  color: #b1b1bc; }
 
 </style>
 
@@ -37198,7 +37488,7 @@ button.btn {
                       <template is="dom-if" if="{{_isOfType(xAxisType, 'linear')}}">
                         <numbro-element value="[[_returnVal(item, 'x', '&nbsp;/&nbsp;')]]" format="[[numberFormat]]" culture="[[numberFormatCulture]]" currency$="[[numberFormatIsCurrency]]" default-currency-format="[[numberFormatCurrency]]" zero-format="[[numberFormatZero]]">
                         </numbro-element>
-                        <template is="dom-if" if="{{_returnVal(item, 'x')}}">{{_getXUnit(item, completeSeriesConfig)}}</template>
+                        <template is="dom-if" if="{{_returnVal(item, 'x')}}">{{_getXUnit(item, completeSeriesConfig.*)}}</template>
                         <template is="dom-if" if="[[_returnVal(item, 'x')]]">
                           &nbsp;/&nbsp;
                         </template>
@@ -37206,7 +37496,7 @@ button.btn {
                       
                       <template is="dom-if" if="{{_isOfType(xAxisType, 'ordinal')}}">
                         <span>[[_returnVal(item, 'x')]]</span>
-                        <template is="dom-if" if="{{_returnVal(item, 'x')}}">{{_getXUnit(item, completeSeriesConfig)}}</template>
+                        <template is="dom-if" if="{{_returnVal(item, 'x')}}">{{_getXUnit(item, completeSeriesConfig.*)}}</template>
                         <template is="dom-if" if="[[_returnVal(item, 'x')]]">
                           &nbsp;/&nbsp;
                         </template>
@@ -37222,7 +37512,7 @@ button.btn {
                       <template is="dom-if" if="{{_isOfType(yAxisType, 'ordinal')}}">
                         <span>[[_returnVal(item, 'y')]]</span>
                       </template>
-                      <template is="dom-if" if="{{_returnVal(item, 'y')}}">{{_getYUnit(item, completeSeriesConfig)}}</template>
+                      <template is="dom-if" if="{{_returnVal(item, 'y')}}">{{_getYUnit(item, completeSeriesConfig.*)}}</template>
                     </div>
                   </span>
               </span>
@@ -37519,10 +37809,10 @@ button.btn {
       return toTest === type;
     },
     _getXUnit: function(item, completeSeriesConfig) {
-      return completeSeriesConfig[item.name].xAxisUnit ? completeSeriesConfig[item.name].xAxisUnit : '';
+      return this.completeSeriesConfig[item.name].xAxisUnit ? this.completeSeriesConfig[item.name].xAxisUnit : '';
     },
     _getYUnit: function(item, completeSeriesConfig) {
-      return completeSeriesConfig[item.name].yAxisUnit ? completeSeriesConfig[item.name].yAxisUnit : '';
+      return this.completeSeriesConfig[item.name] && this.completeSeriesConfig[item.name].yAxisUnit ? this.completeSeriesConfig[item.name].yAxisUnit : '';
     },
     _getPieUnit: function(usePercentage) {
       //pie should have only one config bit.
@@ -38144,10 +38434,6 @@ a {
 .viewport--full-height {
   min-height: 100vh; }
 
-#tooltip {
-  position: absolute;
-  z-index: 5; }
-
 /*------------------------------------*    #CLEARFIX
 \*------------------------------------*/
 /**
@@ -38716,16 +39002,12 @@ a {
         -ms-flex: none !important;
             flex: none !important; } }
 
-#tooltip {
-  background-color: white;
-  border: 1px solid #d1d0d8;
-  box-shadow: 2px 2px 15px #d1d0d8; }
-
 </style>
-      <div style="position:relative">
-        <px-vis-register id="tooltip" class="hidden u-pl u-pr u-pt u-pb" tooltip-data="[[tooltipData]]" chart-data="[[chartData]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" complete-series-config="[[completeSeriesConfig]]">
-        </px-vis-register>
-      </div>
+      <px-tooltip id="tooltip" tooltip-style="[[tooltipStyle]]" for="[[hoverTarget]]" delay="50" follow-mouse="" mouse-coords="[[mousePosition]]">
+          <px-vis-register id="register" truncation-length="100" tooltip-data="[[tooltipData]]" chart-data="[[chartData]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" complete-series-config="[[completeSeriesConfig]]">
+          </px-vis-register>
+
+      </px-tooltip>
     </template>
 </dom-module>
 
@@ -38735,8 +39017,6 @@ a {
     is: 'px-vis-tooltip',
 
     behaviors: [
-      PxVisBehavior.sizing,
-      PxVisBehaviorD3.svg,
       PxVisBehavior.dataset,
       PxVisBehavior.tooltipData,
       PxVisBehavior.axisTypes,
@@ -38751,24 +39031,24 @@ a {
      * @type Object
      */
     properties: {
+      hoverTarget: {
+        type: Object
+      },
+      mousePosition:{
+        type: Array
+      },
+      tooltipStyle: {
+        type: String,
+        value: "dark"
+      },
+      tooltipElem: {
+        type: Object
+      }
 
     }, //properties
 
-    observers: [
-      '_updateTooltip(tooltipData.*)'
-     ],
-    _updateTooltip: function(){
-      if(this.tooltipData.mouse !== null){
-        this.toggleClass('hidden',false, this.$.tooltip);
-        this._moveTooltip();
-      } else {
-        this.toggleClass('hidden',true, this.$.tooltip);
-      }
-    },
-    _moveTooltip: function() {
-
-      this.$.tooltip.style.left = Number(this.margin.left) + 15 + this.tooltipData.mouse[0] + 'px';
-      this.$.tooltip.style.top = Number(this.margin.top) + 5 + this.tooltipData.mouse[1]  + 'px';
+    ready: function(){
+      this.set('tooltipElem', this.$.tooltip);
     }
   });
 </script>
@@ -42738,13 +43018,13 @@ a {
 </style>
     <div id="wrapper" class="flex--row u-m safariFlex safariFlexDirectionRow flex wrapper">
       
-        <div class="inline--flex flex--col" style$="-webkit-flex-basis:[[width]]px;flex-basis:[[width]]px;-ms-flex-preferred-size:[[width]]px;">
+        <div class="inline--flex flex--col" style$="-webkit-flex-basis:[[width]]px;flex-basis:[[width]]px;-ms-flex-preferred-size:[[width]]px;" on-mousemove="_calcMousePos">
           <template is="dom-if" if="[[_topRegister(registerLocation)]]">
             <px-vis-register id="topRegister" height="50" units="[[units]]" width="[[width]]" type="horizontal" tooltip-data="[[tooltipData]]" muted-series="[[mutedSeries]]" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x-axis-type="time">
             </px-vis-register>
           </template>
           <template is="dom-if" if="[[enableTooltip]]">
-            <px-vis-tooltip px-svg-elem="[[pxSvgElem]]" width="250" margin="[[margin]]" chart-data="[[chartData]]" tooltip-data="[[tooltipData]]" complete-series-config="[[completeSeriesConfig]]" x-axis-type="time">
+            <px-vis-tooltip hover-target="[[mouseRect]]" mouse-position="[[mousePosition]]" width="250" margin="[[margin]]" chart-data="[[chartData]]" tooltip-data="[[tooltipData]]" complete-series-config="[[completeSeriesConfig]]" x-axis-type="time" tooltip-style="light">
             </px-vis-tooltip>
           </template>
           <px-vis-svg-canvas class="inline--flex" width="[[width]]" height="[[height]]" margin="[[margin]]">
@@ -42796,9 +43076,9 @@ a {
     <px-vis-gridlines svg="[[svg]]" axis="[[y]]" margin="[[margin]]" length="[[width]]" orientation="left" current-domain="[[currentDomainY]]">
     </px-vis-gridlines>
 
-    <px-vis-axis id="xAxis" svg="[[svg]]" axis="[[x]]" margin="[[margin]]" height="[[height]]" orientation="bottom" label-position="after" complete-series-config="[[completeSeriesConfig]]" prevent-series-bar="" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
+    <px-vis-axis id="xAxis" svg="[[svg]]" axis="[[x]]" axis-type="time" margin="[[margin]]" height="[[height]]" orientation="bottom" label-position="after" complete-series-config="[[completeSeriesConfig]]" prevent-series-bar="" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
     </px-vis-axis>
-    <px-vis-axis id="yAxis" svg="[[svg]]" axis="[[y]]" margin="[[margin]]" height="[[height]]" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" domain-changed="[[domainChanged]]" current-domain="[[currentDomainY]]">
+    <px-vis-axis id="yAxis" svg="[[svg]]" axis="[[y]]" axis-type="linear" margin="[[margin]]" height="[[height]]" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" domain-changed="[[domainChanged]]" current-domain="[[currentDomainY]]">
     </px-vis-axis>
 
     <px-vis-interaction-space svg="[[svg]]" width="[[width]]" height="[[height]]" margin="[[margin]]" x-axis-type="time" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" selection-type="[[selectionType]]">
@@ -43014,7 +43294,11 @@ a {
           disableNavigator: {
             type: Boolean,
             value: false
-          }
+          },
+
+          mousePosition:{
+            type: Array
+          },
         },
 
         observer: [
@@ -43029,6 +43313,11 @@ a {
         ready:function(){
           this._calcMargins();
         },
+
+        _calcMousePos: function(evt) {
+          this.set('mousePosition',[evt.pageX,evt.pageY]);
+        },
+
         /**
          * Cycles through the Configuration object and sets each property. Triggers each components declarative binding
          *
@@ -62722,6 +63011,16 @@ a {
         notify: true,
         readOnly: true,
         computed: '_computeChartData(originalData.*)'
+      },
+      /**
+      * A list of the empty datasets
+      *
+      */
+      emptySets: {
+        type: Object,
+        notify: true,
+        readOnly: true,
+        value: function(){ return {} }
       }
     },
 
@@ -62732,11 +63031,11 @@ a {
     */
     attached: function(){
       if(this._doesObjHaveValues(this.seriesConfig)){
-        this.fire('px-vis-series-config', { 'dataVar': 'seriesConfig', 'data': seriesConfig, 'method':'set' });
+        this.fire('px-vis-series-config', { 'dataVar': 'seriesConfig', 'data': this.seriesConfig, 'method':'set' });
       }
 
       if(this._doesObjHaveValues(this.chartData)){
-        this.fire('px-vis-chart-data', { 'dataVar': 'chartData', 'data': chartData, 'method':'set' });
+        this.fire('px-vis-chart-data', { 'dataVar': 'chartData', 'data': this.chartData, 'method':'set' });
       }
     },
 
@@ -62753,15 +63052,17 @@ a {
     _computeChartData: function() {
       if(this.originalData.length > 0){
         // put in check to see if we have sorted data or not
-
         var chartData = [],
-            // how many arrays we have
-            numArrs = this.originalData.length,
-            // create starting index for each
-            indexes = Array(numArrs).fill(0),
-            iter = 0,
+            numArrs = this.originalData.length, // how many arrays we have
+            indexes = Array(numArrs).fill(0), // create starting index for each
+            iter = 0, // how many series we have reached the end
             id = Array.prototype.map.call(this.originalData,function(d,i){
               // since we are iterating over the data...
+              if(d[this.dataKey].length === 0){
+                var id = this._calcId(this.originalData[i],i);
+                this.emptySets[id] = true;
+                this.fire('px-vis-data-converter-empty-data', { "id": id });
+              }
               // add infinity to the end so we have a stop point
               d[this.dataKey].push([Infinity,Infinity]);
 
@@ -62771,10 +63072,10 @@ a {
 
         // keep going until we reach the end of each series
         while(iter < numArrs){
-          var lowest = Infinity,
-              obj = {},
-              indicies = [],
-              iter = 0;
+          var lowest = Number.MAX_VALUE,  //Number.MAX_VALUE < Infinity
+              obj = {},       //our new merged data unit
+              indicies = [],  //which indexes got incremented
+              iter = 0;       //reset iter with each pass
 
           for(var i = 0; i < numArrs; i++){
             if(this.originalData[i][this.dataKey][indexes[i]][0] < lowest){
@@ -62810,6 +63111,7 @@ a {
           }
         }
 
+        this.fire('px-vis-empty-sets', { 'dataVar': 'emptySets', 'data': this.emptySets, 'method':'set' });
         this.fire('px-vis-chart-data', { 'dataVar': 'chartData', 'data': chartData, 'method':'set' });
         return chartData;
       }
@@ -62888,7 +63190,8 @@ a {
             &quot;includeAllSeries&quot;: true,
             &quot;selectionType&quot;: &quot;xAxis&quot;,
             &quot;xAxisConfig&quot;: {
-              &quot;title&quot;: &quot;Date&quot;
+              &quot;title&quot;: &quot;Date&quot;,
+              &quot;tickFormat&quot;: &quot;%b %d&quot;
             },
             &quot;yAxisConfig&quot;: {
               &quot;title&quot;: &quot;Hz&quot;
