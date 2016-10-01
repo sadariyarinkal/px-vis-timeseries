@@ -1,3 +1,15 @@
+v0.4.2
+==================
+* added correct event listener to demo event counter 
+
+v0.4.1
+==================
+* Fixed demo event counter
+
+v0.4.0
+==================
+* Uprev
+
 v0.3.14
 ==================
 * changed moment.tz to Px.moment.tz in tests
