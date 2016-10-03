@@ -21,6 +21,6 @@
     "commit": "d6307ef62bdf9be55a76f039d416f988ed0d41d7"
   },
   "_source": "https://github.com/PredixDev/px-demo-data.git",
-  "_target": "~0.0.1",
+  "_target": "~0.0.17",
   "_originalSource": "px-demo-data"
 }
