@@ -52,6 +52,6 @@
     "commit": "afc3dfde828cd35e85c19d47e3b03e80476ef199"
   },
   "_source": "https://github.com/PredixDev/px-rangepicker.git",
-  "_target": "~1.2.1",
+  "_target": "^1.2.1",
   "_originalSource": "px-rangepicker"
 }
