@@ -49,6 +49,10 @@ Element which draws scatter series onto the chart
       PxVisBehavior.commonMethods,
       PxVisBehaviorD3.clipPath,
       PxVisBehavior.completeSeriesConfig,
+      PxVisBehaviorD3.radialLineGenerator,
+      PxVisBehavior.tooltipData,
+      PxVisBehaviorD3.domainUpdate,
+      PxVisBehaviorChart.polarData,
       commonColors
     ],
 
@@ -90,6 +94,27 @@ Element which draws scatter series onto the chart
       markerSymbol: {
         type: String,
         value: 'circle'
+      },
+      /**
+       * The opacity of the fill (inside) of the marker
+       */
+      fillOpacity: {
+        type: Number,
+        value: 0.5
+      },
+      /**
+       * The opacity of the stroke (outside) of the marker
+       */
+      strokeOpacity: {
+        type: Number,
+        value: 1
+      },
+      /**
+       * the opacity value of the fill to be used when muting a serie (stroke is not drawn on mute)
+       */
+      mutedOpacity: {
+        type: Number,
+        value: 0.3
       },
       _markerMapping: {
         type: Object,
@@ -135,13 +160,27 @@ Element which draws scatter series onto the chart
        * A holder object for the series builder
        *
        */
-      scatterBuilder:{
-        type:Object
-      }
+      scatterBuilder: {
+        type: Object
+      },
+      /**
+       * Whether the scatter plot is using radial coiordinates (x=phase, y=amplitude)
+       */
+      radial: {
+        type: Boolean,
+        value: false
+      },
+      /**
+       * Name of the variable holding the time stamp in the data. Used for non timeseries charts
+       */
+      timeData: {
+        type: String,
+        value: 'Timestamp'
+      },
     },
 
     observers: [
-      'drawElement(svg,x,y,currentDomainX,currentDomainY,chartData.*,completeSeriesConfig.*)',
+      'drawElement(svg, domainChanged, chartData.*, completeSeriesConfig.*, radial, counterClockwise)',
       'isIdInMuted(mutedSeries.*)',
       '_addClipPath(clipPath)'
      ],
@@ -170,40 +209,82 @@ Element which draws scatter series onto the chart
                               this.completeSeriesConfig[this.seriesId].markerSymbol : this.markerSymbol;
         this.markerScale = this.completeSeriesConfig[this.seriesId].markerScale ?
                               this.completeSeriesConfig[this.seriesId].markerScale : this.markerScale;
+        this.fillOpacity = this.completeSeriesConfig[this.seriesId].markerFillOpacity ?
+                              this.completeSeriesConfig[this.seriesId].markerFillOpacity : this.fillOpacity;
+        this.strokeOpacity = this.completeSeriesConfig[this.seriesId].markerStrokeOpacity ?
+                              this.completeSeriesConfig[this.seriesId].markerStrokeOpacity : this.strokeOpacity;
+        this.mutedOpacity = this.completeSeriesConfig[this.seriesId].mutedOpacity ?
+                              this.completeSeriesConfig[this.seriesId].mutedOpacity : this.mutedOpacity;
 
         // draw the path
-        this.scatterGroup = this.svg.append("g")
-          .attr("series-id", 'scatter_' + this.seriesId)
-          .attr("class", "series-scatter");
+        this.scatterGroup = this.svg.append('g')
+          .attr('series-id', 'scatter_' + this.seriesId)
+          .attr('class', 'series-scatter');
       }
+
+      if(this.radial) {
+        this._defineRadialLine(false, this.multiPath, this.counterClockwise, this.useDegrees);
+      }
+
       var _this = this;
 
       this.scatterBuilder = this.scatterGroup.selectAll('path.' + this.markerSymbol)
         .data(data);
 
-
       this.scatterBuilder.exit().remove();
 
       this.scatterBuilder.enter()
-        .append("path")
-        .attr("class", function(d,i){
+        .append('path')
+        .attr('d', Px.d3.symbol().type(this._markerMapping[this.markerSymbol]))
+        .on('mouseover', this._showTooltip.bind(this))
+        .on('mouseleave', this._hideTooltip.bind(this))
+      .merge(this.scatterBuilder)
+        .attr('fill',this.completeSeriesConfig[this.seriesId]['color'])
+        .attr('fill-opacity',this.fillOpacity)
+        .attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
+        .attr('stroke-opacity',this.strokeOpacity)
+        .attr('transform', this._applyTransform.bind(this))
+        .attr('class', function(d,i){
           // if this series is missing a datapoint, remove that point
           if(isNaN(d[_this.completeSeriesConfig[_this.seriesId]['y']])){
             return this.remove();
           }
           return _this.markerSymbol;
-        })
-        .attr("d", Px.d3.symbol().type(this._markerMapping[this.markerSymbol]))
-      .merge(this.scatterBuilder)
-        .attr('fill',this.completeSeriesConfig[this.seriesId]['color'])
-        .attr('fill-opacity',0.6)
-        .attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
-        .attr('stroke-opacity',1)
-        .attr("transform", this._applyTransform.bind(this));
+        });
 
       this.scatterDots = this.scatterGroup.selectAll('path.' + this.markerSymbol);
 
       this._addClipPath();
+    },
+
+    _showTooltip: function(d, i, paths) {
+
+      // setup a holder for our data to pass out
+      var dataObj = {
+        'time': d[this.timeData],
+        'series': [],
+        'mouse': [],
+        'xArr': null,
+        'yArr': null
+      },
+      values = {},
+      xKey = this.completeSeriesConfig[this.seriesId].x,
+      yKey = this.completeSeriesConfig[this.seriesId].y,
+      box = paths[i].getBoundingClientRect(),
+      center = [window.pageXOffset + box.left + box.width/2, window.pageYOffset + box.top + box.height/2];
+
+      //TODO: boolean to convert this to radians if someone wants radians in their tooltip
+      values[xKey] = d[xKey];
+      values[yKey] = d[yKey];
+
+      dataObj.series.push({'name': this.seriesId, 'value': values});
+
+      this.set('tooltipData',dataObj);
+      this.fire('px-vis-tooltip-updated', { 'dataVar': 'tooltipData', 'data': dataObj, 'method':'set' });
+      this.fire('px-vis-scatter-request-tooltip', {'show': true, 'mouseCoords': center});
+    },
+    _hideTooltip: function(d) {
+      this.fire('px-vis-scatter-request-tooltip', {'show': false});
     },
     /**
      * Helper to call addClipPath with the elem
@@ -234,21 +315,33 @@ Element which draws scatter series onto the chart
      *
      */
     _applyTransform: function(d) {
-      var xTrans,
-          yTrans;
 
-      if(d[this.completeSeriesConfig[this.seriesId]['x']]){
-        xTrans = this.x(d[this.completeSeriesConfig[this.seriesId]['x']]);
-      }
-      if(d[this.completeSeriesConfig[this.seriesId]['y']]){
-        yTrans = this.y(d[this.completeSeriesConfig[this.seriesId]['y']]);
+      if(isNaN(d[this.completeSeriesConfig[this.seriesId]['y']])){
+        return '';
       }
 
-      //make sure we have a value
-      xTrans = xTrans ? xTrans : 0;
-      yTrans = yTrans ? yTrans : 0;
+      if(this.radial) { 
 
-      return "translate(" + xTrans + "," + yTrans + ")" + ' scale(' + this.markerScale + ')';
+        var coors = this.line([d]).slice(1).slice(0, -1);
+        return 'translate(' + coors + ')' + ' scale(' + this.markerScale + ')';
+      } else {
+
+        var xTrans,
+            yTrans;
+
+        if(d[this.completeSeriesConfig[this.seriesId]['x']]){
+          xTrans = this.x(d[this.completeSeriesConfig[this.seriesId]['x']]);
+        }
+        if(d[this.completeSeriesConfig[this.seriesId]['y']]){
+          yTrans = this.y(d[this.completeSeriesConfig[this.seriesId]['y']]);
+        }
+
+        //make sure we have a value
+        xTrans = xTrans ? xTrans : 0;
+        yTrans = yTrans ? yTrans : 0;
+
+        return 'translate(' + xTrans + ',' + yTrans + ')' + ' scale(' + this.markerScale + ')';
+      }
     },
     /**
      * Adds full color to the scatters.
@@ -270,7 +363,7 @@ Element which draws scatter series onto the chart
      TODO add dev set color and opacity
      */
      _muteScatter:function(){
-       this.scatterDots.attr('fill-opacity',0.3);
+       this.scatterDots.attr('fill-opacity', this.mutedOpacity);
        this.scatterDots.attr('stroke-opacity',0);
      }
   });

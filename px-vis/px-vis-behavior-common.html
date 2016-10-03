@@ -48,6 +48,18 @@ PxVisBehavior.sizing = {
           bottom: 0
         };
       }
+    },
+
+    /**
+     * An optional offset for a variety of elements
+     *
+     *
+     */
+    offset: {
+      type: Array,
+      value: function() {
+        return [0,0]
+      }
     }
   }
 };
@@ -229,8 +241,7 @@ PxVisBehavior.formatting = [{
       value: '0,0.0000'
     },
     /**
-     * Defines how a display number should be formatted:
-     * Provide a new default format for 0 value
+     * Defines how to display 0 values
      *
      * For valid formats and features, see: http://numbrojs.com/format.html
      * For docs on the component, see: https://metanov.github.io/numbro-element/components/numbro-element/
@@ -242,7 +253,7 @@ PxVisBehavior.formatting = [{
     numberFormatZero: {
       type: String,
       notify: true,
-      value:''
+      value:'0'
     }
   }
 }, PxVisBehavior.truncating];
@@ -298,7 +309,7 @@ PxVisBehavior.completeSeriesConfig = {
        completeSeriesConfig: {
          type: Object,
          notify: true
-       },
+       }
     }
 };
 
@@ -358,10 +369,7 @@ PxVisBehavior.progressiveRendering = {
   properties: {
     /**
     * By default the lines are rendered progressively for a better user experience.
-    * However this can have a performance impact, minimal on chrome (+15% rendering
-    * time) but important on IE (+200% rendering time...)
-    * Use this to prevent progressive rendering if you plan rendering a lot fo <datalist>
-    * and using IE
+    * Use this to prevent progressive rendering 
     */
     noCanvasProgressiveRendering: {
       type: Boolean,
@@ -877,5 +885,32 @@ PxVisBehavior.commonAxis = {
     }
   }
 };
+
+/*
+    Name:
+    PxVisBehaviorD3.tooltipOnHover
+
+    Description:
+    Polymer behavior that provides a boolean to specify whether to display a tooltip
+    on hovering over a data point
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehaviorD3.tooltipOnHover
+*/
+PxVisBehavior.tooltipOnHover = {
+  properties: {
+    /**
+     * A boolean specifying whether to display a tooltip
+     * on hovering over a data point
+     */
+    tooltipOnHover: {
+      type: Boolean,
+      value: false
+    }
+  }
+};
+
 
 </script>
