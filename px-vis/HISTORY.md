@@ -1,3 +1,11 @@
+v0.5.3
+==================
+* exposed mutedOpacity in seriesConfig and ensure muting wors in all scenarios (canvas, svg, progressive rendering...)
+
+v0.5.2
+==================
+* fixed ordinal data parsing
+
 v0.5.1
 ==================
 * Fixed navigator line
