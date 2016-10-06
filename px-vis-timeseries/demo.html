@@ -8823,17 +8823,55 @@ PxVisBehavior.mutedSeries = {
      *
      * In this example, seriesId1 is muted. seriesId2 was muted, but has been turned back on.
      *
-     * @property mutedSeries
-     * @type Object
-     * @default []
      */
     mutedSeries:{
       type:Object,
       notify: true,
       value:function(){ return {}; },
-    },
+    }
   }
 };
+
+/*
+    Name:
+    PxVisBehavior.muteUnmuteSeries
+
+    Description:
+    Polymer behavior that provides the mutedSeries property and methods to mute/unmute series for px-vis components.
+
+    Dependencies:
+    -
+
+    @polymerBehavior PxVisBehavior.muteUnmuteSeries
+*/
+PxVisBehavior.muteUnmuteSeries = [{
+  properties: {},
+
+  /**
+   * Method to mute or umute
+   *
+   */
+  muteUnmuteSeries: function(series) {
+    //TODO Polymer 2.0: fix this
+    // make sure we are not dealing with APM's IDs
+    if(series.indexOf('.') === -1) {
+      // if it doesnt exist, let's add it and set to true
+      if( typeof(this.mutedSeries[series]) === 'undefined' ) {
+        this.set('mutedSeries.' + series, true);
+      } else {
+        //if does exist, flip the bit
+        this.set('mutedSeries.' + series, !this.mutedSeries[series]);
+      }
+    } else {
+      var muted = this.mutedSeries;
+      this.mutedSeries = [];
+      muted[series] = typeof(muted[series]) === 'undefined' ? true : !muted[series];
+      this.set('mutedSeries', muted);
+    }
+
+    this.fire('px-vis-muted-series-updated', { 'data': this.mutedSeries[series], 'dataVar': ('mutedSeries.'+series) ,'method': 'set' });
+  }
+}, PxVisBehavior.mutedSeries];
 
 /*
     Name:
@@ -8851,7 +8889,7 @@ PxVisBehavior.progressiveRendering = {
   properties: {
     /**
     * By default the lines are rendered progressively for a better user experience.
-    * Use this to prevent progressive rendering 
+    * Use this to prevent progressive rendering
     */
     noCanvasProgressiveRendering: {
       type: Boolean,
@@ -9425,6 +9463,82 @@ PxVisBehavior.polarData = {
   }
 };
 
+/*
+    Name:
+    PxVisBehavior.seriesId
+
+    Description:
+    Polymer behavior that provides seriesId property
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehavior.seriesId
+*/
+PxVisBehavior.seriesId = {
+  properties: {
+  /**
+    * A unique ID for each line series
+    *
+    */
+    seriesId:{
+      type:String
+    }
+  }
+};
+
+/*
+    Name:
+    PxVisBehavior.dynamicConfigProperties
+
+    Description:
+    Polymer behavior that allows the dynamic creation of properties that will be 
+    searched for in the completeSeriesConfig
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehavior.dynamicConfigProperties
+*/
+PxVisBehavior.dynamicConfigProperties = [{
+  properties: {
+    _dynamicProperties: {
+      type: Array,
+      value: function() {
+        return [];
+      }
+    }
+  },
+  observers: ['_processConfig(completeSeriesConfig.*)'],
+
+  _computeValue: function(configValue, def) {
+    return (typeof configValue !== 'undefined' && configValue !== null) ?
+                              configValue : def;
+  },
+
+  _processConfig: function(completeSeriesConfig, seriesId) {
+
+    var conf = this.completeSeriesConfig[this.seriesId],
+        name;
+    for(var i=0; i<this._dynamicProperties.length; i++) {
+      name = this._dynamicProperties[i];
+      this.set(name, this._computeValue(conf[name], this['_default' + name]));
+    }
+  },
+
+  _watchConfigProperty: function(name, defValue) {
+    this.push('_dynamicProperties', name);
+    this['_default' + name] = defValue;
+
+    //if we have the config compute value now. If we don't it will be processed
+    //when the config comes in
+    if(this.completeSeriesConfig && this.seriesId) {
+      var conf = this.completeSeriesConfig[this.seriesId]
+      this[name] = this._computeValue(conf[name], defValue);
+    }
+  }
+  
+},PxVisBehavior.completeSeriesConfig, PxVisBehavior.seriesId];
 
 </script>
 <script>
@@ -10396,6 +10510,10 @@ PxVisBehaviorD3.radialLineGenerator = [{
     */
     line: {
       type: Object
+    },
+
+    lineRadiusLimit: {
+      type: Number
     }
   },
   /**
@@ -10406,7 +10524,8 @@ PxVisBehaviorD3.radialLineGenerator = [{
     //get our dimensions
     var _this = this,
         renderToCanvas = (typeof(toCanvas) !== 'undefined') ? toCanvas : false,
-        dims = this.completeSeriesConfig[this.seriesId]['x'],
+        //omg; need to make a copy or else completing the circle breaks dragging.
+        dims = JSON.parse(JSON.stringify(this.completeSeriesConfig[this.seriesId]['x'])),
         path,
         line,
         clockwiseFactor = counterClockwise ? -1 : 1;
@@ -10415,13 +10534,24 @@ PxVisBehaviorD3.radialLineGenerator = [{
 
       var processAngle;
 
+      if(this.interpolationFunction === 'bofCompleteManually') {
+        //manually complete the circle.
+        // if we use a d3 interpolator, it adds 'Z' to the path which cause all broken paths to complete. We want to keep broken paths broken
+        dims.push(dims[0]);
+      }
+
       path = Px.d3.radialLine()
       .angle(function(d) {
         return _this.x(d[0]) * clockwiseFactor;
       })
       .radius(function(d) {
-          // ~~ --> round pixels values to optimize svg perfs
-        return ~~_this.y(Number(d[1]));
+        // ~~ --> round pixels values to optimize svg perfs
+        var radius = ~~_this.y(Number(d[1]));
+
+        if(typeof _this.lineRadiusLimit === 'number' && radius < _this.lineRadiusLimit) {
+          return _this.lineRadiusLimit;
+        }
+        return radius
       }).defined(function(d) {
         return !isNaN(_this.x(d[0])) && !isNaN(_this.y(Number(d[1])));
       });
@@ -10468,7 +10598,7 @@ PxVisBehaviorD3.radialLineGenerator = [{
       }
     }
 
-    if(this.interpolationFunction) {
+    if(typeof this.interpolationFunction === 'function') {
       path.curve(this.interpolationFunction);
     }
 
@@ -10494,13 +10624,6 @@ PxVisBehaviorD3.radialLineGenerator = [{
 */
 PxVisBehaviorD3.lineShared = [{
   properties: {
-    /**
-    * A unique ID for each line series
-    *
-    */
-    seriesId:{
-      type:String
-    },
     /**
     * A dev set boolean specifying if the chart is for a parallel coordinates chart
     *
@@ -10682,7 +10805,7 @@ PxVisBehaviorD3.lineShared = [{
 
     this.set('line',line);
   }
-},PxVisBehaviorD3.radialLineGenerator];
+},PxVisBehaviorD3.radialLineGenerator, PxVisBehavior.seriesId];
 
 </script>
 <script>
@@ -10843,7 +10966,7 @@ PxVisBehaviorChart.chartCommon = [{
           for(var j=0; j<defaultConfigProps.length; j++) {
             var property = defaultConfigProps[j];
 
-            if(!fullConfig[k[i]][property] && this.defaultSeriesConfig[property]) {
+            if(typeof fullConfig[k[i]][property] === 'undefined' && typeof this.defaultSeriesConfig[property] !== 'undefined') {
               fullConfig[k[i]][property] = this.defaultSeriesConfig[property];
             }
           }
@@ -11998,7 +12121,7 @@ PxVisBehaviorTime.datetime = {
     mutedChanged: function() {
       this.set('_canvasRedraw', !this._canvasRedraw);
     },
-    _isSerieMuted(d) {
+    _isSerieMuted: function(d) {
       if(this.multiPath) {
         return this.mutedSeries[d[this.seriesId]] ? true : false;
       } else {
@@ -12019,7 +12142,7 @@ PxVisBehaviorTime.datetime = {
       }
       return null;
     },
-    rgbToRgba(rgb, opacity) {
+    rgbToRgba: function(rgb, opacity) {
       //assuming rgb is correctly formatted...
       //remove ')'
       var result = rgb.slice(0,rgb.length-1);
@@ -12055,6 +12178,7 @@ PxVisBehaviorTime.datetime = {
       PxVisBehavior.categories,
       PxVisBehaviorD3.selectedDomain,
       PxVisBehavior.polarData,
+      PxVisBehavior.dynamicConfigProperties,
       commonColors
     ],
 
@@ -12124,10 +12248,10 @@ PxVisBehaviorTime.datetime = {
       },
       /**
        * the opacity value of the fill to be used when muting a serie (stroke is not drawn on mute)
+       * This property will be read from the completeSeriesConfig
        */
       mutedOpacity: {
-        type: Number,
-        value: 0.3
+        type: Number
       }
     },
 
@@ -12136,6 +12260,9 @@ PxVisBehaviorTime.datetime = {
       'isIdInMuted(mutedSeries.*, completeSeriesConfig)',
       '_addClipPath(clipPath)'
      ],
+     ready: function() {
+       this._watchConfigProperty('mutedOpacity', 0.3);
+     },
 
     /**
      * Draws or updates the line element.
@@ -12156,10 +12283,6 @@ PxVisBehaviorTime.datetime = {
           var data = [this.chartData];
           this._defineSingleLine(false);
         }
-
-        //make sure we have the right muted opacity
-        this.mutedOpacity = this.completeSeriesConfig[this.seriesId].mutedOpacity ?
-                              this.completeSeriesConfig[this.seriesId].mutedOpacity : this.mutedOpacity;
 
         // checks to see if the group already exists. If not, create; if so, update
         if(this._isObjEmpty(this.lineGroup)) {
@@ -12196,7 +12319,7 @@ PxVisBehaviorTime.datetime = {
             }
             return this.completeSeriesConfig[this.seriesId]['color'];
           }.bind(this))
-          .attr('stroke-opacity',this._svgLine.bind(this));
+          .attr('stroke-opacity',this._svgLineOpacity.bind(this));
 
         // Make it easy to get our lines again
         this.linePath = this.lineGroup.selectAll('path.series-line');
@@ -12230,12 +12353,8 @@ PxVisBehaviorTime.datetime = {
         }.bind(this));
         this._colorLine();
       } else if(this.mutedSeries.hasOwnProperty(this.seriesId)){
-        // if true, mute
-        if(this.mutedSeries[this.seriesId]){
-          this._muteLine();
-        } else {
-          this._colorLine();
-        }
+
+        this._colorLine();
       }
     },
     /**
@@ -12249,28 +12368,22 @@ PxVisBehaviorTime.datetime = {
           }
           return this.completeSeriesConfig[this.seriesId]['color'];
         }.bind(this))
-        .attr('stroke-opacity',this._svgLine.bind(this));
+        .attr('stroke-opacity',this._svgLineOpacity.bind(this));
     },
     /**
      * Returns the opacity for the SVG line
      *
      */
-    _svgLine: function(d){
-      if(this.gradientLine){
-        return this._opacityLine(d);
+    _svgLineOpacity: function(d) {
+      if(this.mutedSeries[this.seriesId]) {
+        return this.mutedOpacity;
       }
-      return 1
-    },
-
-    /**
-     * Adds muted color to the line.
-     *
-     TODO add dev set color and opacity
-     */
-     _muteLine:function(){
-       this.linePath.attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
-         .attr('stroke-opacity', this.mutedOpacity);
-     },
+      if(this.gradientLine) {
+        return this._opacityLine(d);
+      } else {
+        return 1;
+      }
+    }
   });
 </script>
 
@@ -12285,6 +12398,7 @@ PxVisBehaviorTime.datetime = {
 
 <script>
   Polymer({
+
     is: 'px-vis-scatter',
 
     behaviors: [
@@ -12299,6 +12413,8 @@ PxVisBehaviorTime.datetime = {
       PxVisBehavior.tooltipData,
       PxVisBehaviorD3.domainUpdate,
       PxVisBehavior.polarData,
+      PxVisBehavior.seriesId,
+      PxVisBehavior.dynamicConfigProperties,
       commonColors
     ],
 
@@ -12310,64 +12426,14 @@ PxVisBehaviorTime.datetime = {
      */
     properties: {
       /**
-       * A unique ID for each line series
+       * An index of the series used for calculating its color
        *
-       * @property seriesId
+       * @property scatterNumber
        * @type String
        */
-      seriesId:{
-        type:String
-      },
-      /**
-       * Scales the size of the scatter marker
-       *
-       */
-      markerScale: {
-        type: Number,
-        value: 1
-      },
-      /**
-       * The symbol used for the marker. Supported symbols:
-       * - 'circle'
-       * - 'cross'
-       * - 'diamond'
-       * - 'square'
-       * - 'triangle-up'
-       * - 'star'
-       * - 'wye'
-       * more info at https://github.com/d3/d3-shape/blob/master/README.md#symbols
-       */
-      markerSymbol: {
-        type: String,
-        value: 'circle'
-      },
-      /**
-       * the size of the markers
-       */
-      markerSize: {
-        type: Number,
-        value: 64
-      },
-      /**
-       * The opacity of the fill (inside) of the marker
-       */
-      fillOpacity: {
-        type: Number,
-        value: 0.5
-      },
-      /**
-       * The opacity of the stroke (outside) of the marker
-       */
-      strokeOpacity: {
-        type: Number,
-        value: 1
-      },
-      /**
-       * the opacity value of the fill to be used when muting a serie (stroke is not drawn on mute)
-       */
-      mutedOpacity: {
-        type: Number,
-        value: 0.3
+      seriesNumber:{
+        type:Number,
+        value:0
       },
       _markerMapping: {
         type: Object,
@@ -12380,17 +12446,57 @@ PxVisBehaviorTime.datetime = {
           'triangle-up': Px.d3.symbolTriangle,
           'star': Px.d3.symbolStar,
           'wye': Px.d3.symbolWye
-        }
-      },
-      /**
-       * An index of the series used for calculating its color
-       *
-       * @property scatterNumber
-       * @type String
-       */
-      seriesNumber:{
-        type:Number,
-        value:0
+        },
+        /**
+         * The symbol used for the marker. Supported symbols:
+         * - 'circle'
+         * - 'cross'
+         * - 'diamond'
+         * - 'square'
+         * - 'triangle-up'
+         * - 'star'
+         * - 'wye'
+         * more info at https://github.com/d3/d3-shape/blob/master/README.md#symbols
+         * This property will be read from the completeSeriesConfig
+         */
+        markerSymbol: {
+          type: String
+        },
+        /**
+         * Scales the size of the scatter marker
+         * This property will be read from the completeSeriesConfig
+         */
+        markerScale: {
+          type: Number
+        },
+        /**
+         * the size of the markers
+         * This property will be read from the completeSeriesConfig
+         */
+        markerSize: {
+          type: Number
+        },
+        /**
+         * The opacity of the fill (inside) of the marker
+         * This property will be read from the completeSeriesConfig
+         */
+        markerFillOpacity: {
+          type: Number
+        },
+        /**
+         * The opacity of the stroke (outside) of the marker
+         * This property will be read from the completeSeriesConfig
+         */
+        markerStrokeOpacity: {
+          type: Number
+        },
+        /**
+         * the opacity value of the fill to be used when muting a serie (stroke is not drawn on mute)
+         * This property will be read from the completeSeriesConfig
+         */
+        mutedOpacity: {
+          type: Number
+        },
       },
       /**
        * A holder object for the series group
@@ -12433,12 +12539,20 @@ PxVisBehaviorTime.datetime = {
     },
 
     observers: [
-      'drawElement(svg, domainChanged, chartData.*, completeSeriesConfig.*, radial, counterClockwise)',
+      'drawElement(svg, domainChanged, chartData.*, completeSeriesConfig.*, radial, counterClockwise,markerSymbol, markerScale, markerSize, markerFillOpacity, markerStrokeOpacity)',
       'isIdInMuted(mutedSeries.*)',
       '_addClipPath(clipPath)'
      ],
 
-    ready:function(){
+    ready:function() {
+      //generate properties dynamically
+      this._watchConfigProperty('markerSymbol', 'circle');
+      this._watchConfigProperty('markerScale', 1);
+      this._watchConfigProperty('markerSize', 64);
+      this._watchConfigProperty('markerFillOpacity', 0.6);
+      this._watchConfigProperty('markerStrokeOpacity', 1);
+      this._watchConfigProperty('mutedOpacity', 0.3);
+
       // if there is no dev set unique ID, generate one
       if(!this.seriesId){
         this.set('seriesId', this.generateRandomID('scatter_'));
@@ -12457,18 +12571,6 @@ PxVisBehaviorTime.datetime = {
       // checks to see if the group already exists. If not, create; if so, update
       if(this._isObjEmpty(this.scatterGroup)) {
 
-        //override marker symbol if defined in serie config
-        this.markerSymbol = this.completeSeriesConfig[this.seriesId].markerSymbol ?
-                              this.completeSeriesConfig[this.seriesId].markerSymbol : this.markerSymbol;
-        this.markerScale = this.completeSeriesConfig[this.seriesId].markerScale ?
-                              this.completeSeriesConfig[this.seriesId].markerScale : this.markerScale;
-        this.fillOpacity = this.completeSeriesConfig[this.seriesId].markerFillOpacity ?
-                              this.completeSeriesConfig[this.seriesId].markerFillOpacity : this.fillOpacity;
-        this.strokeOpacity = this.completeSeriesConfig[this.seriesId].markerStrokeOpacity ?
-                              this.completeSeriesConfig[this.seriesId].markerStrokeOpacity : this.strokeOpacity;
-        this.mutedOpacity = this.completeSeriesConfig[this.seriesId].mutedOpacity ?
-                              this.completeSeriesConfig[this.seriesId].mutedOpacity : this.mutedOpacity;
-
         // draw the path
         this.scatterGroup = this.svg.append('g')
           .attr('series-id', 'scatter_' + this.seriesId)
@@ -12484,31 +12586,29 @@ PxVisBehaviorTime.datetime = {
 
       var _this = this;
 
-      this.scatterBuilder = this.scatterGroup.selectAll('path.' + this.markerSymbol)
+      this.scatterBuilder = this.scatterGroup.selectAll('path.symbol')
         .data(data);
 
       this.scatterBuilder.exit().remove();
 
       this.scatterBuilder.enter()
         .append('path')
-        .attr('d', Px.d3.symbol().type(this._markerMapping[this.markerSymbol]))
+        .attr('class', 'symbol')
         .on('mouseover', this._showTooltip.bind(this))
         .on('mouseleave', this._hideTooltip.bind(this))
       .merge(this.scatterBuilder)
-        .attr('fill',this.completeSeriesConfig[this.seriesId]['color'])
-        .attr('fill-opacity',this.fillOpacity)
-        .attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
-        .attr('stroke-opacity',this.strokeOpacity)
+        .attr('d', Px.d3.symbol().type(this._markerMapping[this.markerSymbol]).size(this.markerSize))
         .attr('transform', this._applyTransform.bind(this))
-        .attr('class', function(d,i){
+        .each(function(d,i) {
           // if this series is missing a datapoint, remove that point
           if(isNaN(d[_this.completeSeriesConfig[_this.seriesId]['y']])){
-            return this.remove();
+            this.remove();
           }
-          return _this.markerSymbol;
         });
 
-      this.scatterDots = this.scatterGroup.selectAll('path.' + this.markerSymbol);
+      this.scatterDots = this.scatterGroup.selectAll('path.symbol');
+
+      this._colorScatter();
 
       this._addClipPath();
     },
@@ -12567,12 +12667,8 @@ PxVisBehaviorTime.datetime = {
      */
     isIdInMuted: function() {
       if(this.mutedSeries.hasOwnProperty(this.seriesId)){
-        // if true, mute
-        if(this.mutedSeries[this.seriesId]){
-          this._muteScatter();
-        } else {
-          this._colorScatter();
-        }
+       
+        this._colorScatter();
       }
     },
     /**
@@ -12614,23 +12710,14 @@ PxVisBehaviorTime.datetime = {
      * @method _colorScatter
      */
     _colorScatter:function(){
-      var index = this.seriesNumber;
+      var index = this.seriesNumber,
+          muted = this.mutedSeries[this.seriesId];
       this.scatterDots
         .attr('fill',this.completeSeriesConfig[this.seriesId]['color'])
-        .attr('fill-opacity',0.6)
+        .attr('fill-opacity', muted ? this.mutedOpacity : this.markerFillOpacity)
         .attr('stroke',this.completeSeriesConfig[this.seriesId]['color'])
-        .attr('stroke-opacity',1);
-    },
-    /**
-     * Adds muted color to the scatters.
-     *
-     * @method _muteScatter
-     TODO add dev set color and opacity
-     */
-     _muteScatter:function(){
-       this.scatterDots.attr('fill-opacity', this.mutedOpacity);
-       this.scatterDots.attr('stroke-opacity',0);
-     }
+        .attr('stroke-opacity', muted ? 0 : this.markerStrokeOpacity);
+    }
   });
 </script>
 <script>
@@ -14366,7 +14453,7 @@ PxVisBehaviorTime.datetime = {
     },
 
     observers: [
-      'drawElement(svg,x,y,currentDomainX,currentDomainY,eventData.*)',
+      'drawElement(svg,x,y,currentDomainX,currentDomainY,eventData.*,eventConfig.*)',
       '_addClipPath(clipPath)'
      ],
 
@@ -14376,7 +14463,6 @@ PxVisBehaviorTime.datetime = {
         this.set('eventId', this.generateRandomID('event_'));
       }
     },
-
     /**
      * Draws or updates the event element.
      * Called from an observer watching for data and the necessary d3 objects
@@ -14660,6 +14746,9 @@ PxVisBehaviorTime.datetime = {
           disableTicks: {
             type: Boolean,
             value: false
+          },
+          _titleGroup: {
+            type: Object
           }
         },
 
@@ -14840,17 +14929,7 @@ PxVisBehaviorTime.datetime = {
           this._setLineStyles(this._axisGroup,'line,path');
           this._setLabelStyles(this._axisGroup);
 
-          if(this.axisType !== 'ordinal') {
-
-            //apparently we need to give ourselves a bit of time to ensure the axis draws and it can clac this
-            this.debounce("drawnTicks", function(){
-              if(this.ticks){
-                this.set('drawnTickValues', this._axis.scale().ticks(this.ticks));
-              } else {
-                this.set('drawnTickValues', this._axis.scale().ticks());
-              }
-            },1)
-          }
+          this._calcDrawnTicks();
         },
         /**
          * Updates the axis
@@ -14869,8 +14948,23 @@ PxVisBehaviorTime.datetime = {
 
           this._setLabelStyles(this._axisGroup);
 
+          this._calcDrawnTicks();
+
           // alert parents that we are done drawing the axis
           this.fire('px-axis-done');
+        },
+
+        _calcDrawnTicks: function() {
+          if(this.axisType !== 'ordinal') {
+            //apparently we need to give ourselves a bit of time to ensure the axis draws and it can clac this
+            this.debounce("drawnTicks", function(){
+              if(this.ticks){
+                this.set('drawnTickValues', this._axis.scale().ticks(this.ticks));
+              } else {
+                this.set('drawnTickValues', this._axis.scale().ticks());
+              }
+            },1)
+          }
         },
 
         /**
@@ -16142,7 +16236,7 @@ PxVisBehaviorTime.datetime = {
         xTime = false;
         doX = false;
       }
-      if(!this._chartDataHasChanged && exts.y.length> 0 && exts.y[0] !== Infinity && exts.y[1] !== -Infinity){
+      if(!this._chartDataHasChanged && exts.y.length > 0 && exts.y[0] !== Infinity && exts.y[1] !== -Infinity){
         yTime = false;
         doY = false;
       }
@@ -18112,7 +18206,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       PxVisBehavior.sizing,
       PxVisBehavior.formatting,
       PxVisBehaviorTime.datetime,
-      PxVisBehavior.mutedSeries,
+      PxVisBehavior.muteUnmuteSeries,
       PxVisBehavior.tooltipData,
       PxVisBehavior.dataset,
       PxVisBehavior.axisTypes,
@@ -18279,24 +18373,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       var ne = Polymer.dom(e),
           series = ne.rootTarget.getAttribute('name').substr(1);
 
-      //TODO Polymer 2.0: fix this
-      // make sure we are not dealing with APM's IDs
-      if(series.indexOf('.') === -1) {
-        // if it doesnt exist, let's add it and set to true
-        if( typeof(this.mutedSeries[series]) === 'undefined' ) {
-          this.set('mutedSeries.' + series, true);
-        } else {
-          //if does exist, flip the bit
-          this.set('mutedSeries.' + series, !this.mutedSeries[series]);
-        }
-      } else {
-        var muted = this.mutedSeries;
-        this.mutedSeries = [];
-        muted[series] = typeof(muted[series]) === 'undefined' ? true : !muted[series];
-        this.set('mutedSeries', muted);
-      }
-
-      this.fire('px-vis-muted-series-updated', { 'data': this.mutedSeries[series], 'dataVar': ('mutedSeries.'+series) ,'method': 'set' });
+      this.muteUnmuteSeries(series);
 
       e.stopPropagation();
     },
@@ -18826,8 +18903,8 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       }
       this._clipPathSvg
         .attr('y',-this.margin.top)
-        .attr('width', this.width - this.margin.left)
-        .attr('height', this.height - this.margin.bottom);
+        .attr('width', Math.max(this.width - this.margin.left, 0))
+        .attr('height', Math.max(this.height - this.margin.bottom, 0));
 
       if(!this._seriesClipPathSvg) {
 
@@ -18843,9 +18920,9 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       }
       this._seriesClipPathSvg
         .attr('y', this.seriesClipPathYOffset)
-        .attr('width', this.width - this.margin.left - this.margin.right)
-        .attr('height', this.height - this.margin.bottom  - 
-                        this.margin.top - this.seriesClipPathYOffset);
+        .attr('width', Math.max(this.width - this.margin.left - this.margin.right,0))
+        .attr('height', Math.max(this.height - this.margin.bottom  - 
+                        this.margin.top - this.seriesClipPathYOffset,0));
 
     }
   });
