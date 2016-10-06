@@ -1,6 +1,6 @@
 <link rel="import" href="../polymer/polymer.html"/>
 <link rel="import" href="px-vis-behavior-d3.html" />
-<link rel="import" href="px-vis-behavior-chart.html" />
+<link rel="import" href="px-vis-behavior-common.html" />
 <link rel="import" href="../px-colors-design/colors.html" />
 
 <!--
@@ -52,7 +52,7 @@ Element which draws lines series onto the chart
       PxVisBehavior.completeSeriesConfig,
       PxVisBehavior.categories,
       PxVisBehaviorD3.selectedDomain,
-      PxVisBehaviorChart.polarData,
+      PxVisBehavior.polarData,
       commonColors
     ],
 
@@ -142,7 +142,7 @@ Element which draws lines series onto the chart
      * @method drawElement
      */
     drawElement: function() {
-      this.debounce('draw',function(){
+      this.debounce('draw',function() {
         // we need to wrap the data differently depending on if we are drawing many lines or just one line
         if(this.parallelCoordinates) {
           var data = this.chartData;

@@ -42,7 +42,7 @@ e.__upgraded__&&!e.__attached&&(e.__attached=!0,e.attachedCallback&&e.attachedCa
         
 
         <style include="px-theme-styles" is="custom-style"></style>
-        
+
         </head>
 
     <body style="padding:30px"><div hidden="" by-vulcanize=""><dom-module id="px-theme-styles" assetpath="../px-theme/">
@@ -9394,6 +9394,37 @@ PxVisBehavior.tooltipOnHover = {
   }
 };
 
+/*
+    Name:
+    PxVisBehaviorD3.polarData
+
+    Description:
+    Polymer behavior that provides properties used when working with polar data
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehaviorD3.polarData
+*/
+PxVisBehavior.polarData = {
+  properties: {
+    /**
+     * whether the polar data should be interpreted clockwise or counter-clockwise
+     */
+    counterClockwise: {
+      type: Boolean,
+      value: false
+    },
+    /**
+     * Whether the angle data should be processed as degrees, as opposed to be processed as radians
+     */
+    useDegrees: {
+      type: Boolean,
+      value: false
+    }
+  }
+};
+
 
 </script>
 <script>
@@ -10789,11 +10820,16 @@ PxVisBehaviorChart.chartCommon = [{
           return;
         }
 
-        // First, fill in the existing series.
+        // First, fill in the series specified in seriesConfig.
         for(var i = 0; i < kLen; i++) {
           if(!fullConfig[k[i]].hasOwnProperty('y')){
-            console.warn("Configuration " + k[i] + " does not have a y-value associated with it.");
-            continue;
+            console.warn("Configuration " + k[i] + " does not have a y-value associated with it. Falling back to ID");
+            fullConfig[k[i]]['y'] = k[i];
+          }
+
+          if(!fullConfig[k[i]].hasOwnProperty('x')){
+            console.warn("Configuration " + k[i] + " does not have a x-value associated with it. Falling back to default");
+            fullConfig[k[i]]['x'] = this.defaultSeriesConfig['x'];
           }
 
           if(!fullConfig[k[i]]['name']) {
@@ -10829,10 +10865,10 @@ PxVisBehaviorChart.chartCommon = [{
           delete objYs[ fullConfig[k[i]]['y'] ];
         }
 
-        //FIXME y and x checks
+        // delete the 'x' key from our all y keys obj
+
         //figure out what x is, either a config value (assuming all x are the same) or the default
         x = (k.length > 0) ? fullConfig[k[0]]['x'] : this.defaultSeriesConfig['x'];
-        // delete the 'x' key from our all y keys obj
         delete objYs [x];
 
         // create a new set of whatever Ys are left so we can iterate over it
@@ -11130,25 +11166,6 @@ PxVisBehaviorChart.subConfiguration = {
         element.set(key, config[key])
       }
     },
-};
-
-PxVisBehaviorChart.polarData = {
-  properties: {
-    /**
-     * whether the polar data should be interpreted clockwise or counter-clockwise
-     */
-    counterClockwise: {
-      type: Boolean,
-      value: false
-    },
-    /**
-     * Whether the angle data should be processed as degrees, as opposed to be processed as radians
-     */
-    useDegrees: {
-      type: Boolean,
-      value: false
-    }
-  }
 };
 
 PxVisBehaviorChart.timeFiltering = [{
@@ -12037,7 +12054,7 @@ PxVisBehaviorTime.datetime = {
       PxVisBehavior.completeSeriesConfig,
       PxVisBehavior.categories,
       PxVisBehaviorD3.selectedDomain,
-      PxVisBehaviorChart.polarData,
+      PxVisBehavior.polarData,
       commonColors
     ],
 
@@ -12127,7 +12144,7 @@ PxVisBehaviorTime.datetime = {
      * @method drawElement
      */
     drawElement: function() {
-      this.debounce('draw',function(){
+      this.debounce('draw',function() {
         // we need to wrap the data differently depending on if we are drawing many lines or just one line
         if(this.parallelCoordinates) {
           var data = this.chartData;
@@ -12281,7 +12298,7 @@ PxVisBehaviorTime.datetime = {
       PxVisBehaviorD3.radialLineGenerator,
       PxVisBehavior.tooltipData,
       PxVisBehaviorD3.domainUpdate,
-      PxVisBehaviorChart.polarData,
+      PxVisBehavior.polarData,
       commonColors
     ],
 
@@ -12323,6 +12340,13 @@ PxVisBehaviorTime.datetime = {
       markerSymbol: {
         type: String,
         value: 'circle'
+      },
+      /**
+       * the size of the markers
+       */
+      markerSize: {
+        type: Number,
+        value: 64
       },
       /**
        * The opacity of the fill (inside) of the marker
@@ -12449,6 +12473,9 @@ PxVisBehaviorTime.datetime = {
         this.scatterGroup = this.svg.append('g')
           .attr('series-id', 'scatter_' + this.seriesId)
           .attr('class', 'series-scatter');
+
+        //send empty tooltip data so the register shows up
+        this._hideTooltip();
       }
 
       if(this.radial) {
@@ -12513,6 +12540,15 @@ PxVisBehaviorTime.datetime = {
       this.fire('px-vis-scatter-request-tooltip', {'show': true, 'mouseCoords': center});
     },
     _hideTooltip: function(d) {
+      var dataObj = {
+        'time': null,
+        'series': [{'name': this.seriesId, 'value':null}],
+        'mouse': [],
+        'xArr': null,
+        'yArr': null
+      };
+      this.set('tooltipData',dataObj);
+      this.fire('px-vis-tooltip-updated', { 'dataVar': 'tooltipData', 'data': dataObj, 'method':'set' });
       this.fire('px-vis-scatter-request-tooltip', {'show': false});
     },
     /**
@@ -13568,11 +13604,13 @@ PxVisBehaviorTime.datetime = {
         if(Array.isArray(this._target)){
           for(var i =0; i < this._target.length; i++){
             this.listen(this._target[i], 'mouseenter', '_show');
+            this.listen(this._target[i], 'mouseup', '_show');
             this.listen(this._target[i], 'mouseleave', '_hide');
             this.listen(this._target[i], 'mousedown', '_hide');
           }
         } else {
           this.listen(this._target, 'mouseenter', '_show');
+          this.listen(this._target, 'mouseup', '_show');
           this.listen(this._target, 'mouseleave', '_hide');
           this.listen(this._target, 'mousedown', '_hide');
         }
@@ -13586,11 +13624,13 @@ PxVisBehaviorTime.datetime = {
       if(Array.isArray(this._target)){
         for(var i =0; i < this._target.length; i++){
           this.unlisten(this._target[i], 'mouseenter', '_show');
+          this.unlisten(this._target[i], 'mouseup', '_show');
           this.unlisten(this._target[i], 'mouseleave', '_hide');
           this.unlisten(this._target[i], 'mousedown', '_hide');
         }
       } else {
         this.unlisten(this._target, 'mouseenter', '_show');
+        this.unlisten(this._target, 'mouseup', '_show');
         this.unlisten(this._target, 'mouseleave', '_hide');
         this.unlisten(this._target, 'mousedown', '_hide');
       }
@@ -13601,6 +13641,7 @@ PxVisBehaviorTime.datetime = {
     },
 
     _onMouseMove: function(){
+
       if(this.followMouse && this.thisRect){
         if(this.orientation === 'auto') {
 
@@ -13811,7 +13852,6 @@ PxVisBehaviorTime.datetime = {
       *
       */
      _autoPosition: function() {
-
        // smart position to right automatically for now
        this._doPosition(this._findValidSmartOrientation(this._values.TYPE.right));
      },
@@ -14627,7 +14667,7 @@ PxVisBehaviorTime.datetime = {
           'drawElement(domainChanged,svg,axis,margin,height,disableTicks)',
           'drawSeriesBars(completeSeriesConfig.*, titleDrawn)',
           '_muteSeriesBars(mutedSeries.*)',
-          '_titleChanged(displayedTitle, _axisGroup, titleLocation.*)',
+          '_titleChanged(displayedTitle, _axisGroup, titleLocation.*, height, width)',
           '_truncateTitle(title, truncationLength, appendUnitInTitle, completeSeriesConfig)'
         ],
 
@@ -15022,30 +15062,6 @@ PxVisBehaviorTime.datetime = {
                 .attr('transform','rotate(' + r + ')');
           }
 
-          // console.log(this._titleGroup)
-          // this._titleGroup = this.svg.selectAll('g.title-group')
-          //   .data([this.title]);
-          // console.log(this._titleGroup)
-          //
-          // this._titleGroup.exit().remove();
-          //
-          // this._titleGroup.enter()
-          //   .append('g')
-          //   .attr('class','title-group')
-          //   .attr('for', this.axisId)
-          //   .append('text')
-          //   .attr('class','axis-title')
-          //   .attr('font-size', this.titleTypeSize + 'px')
-          //   .attr('font-style','GE Inspira Sans')
-          //
-          // this._titleGroup.merge(this._titleGroup)
-          //   .attr('transform','translate(' + x + ',' + y + ')')
-          //   .select('.axis-title')
-          //   .text(this.title)
-          //   .attr('text-anchor', anchor)
-          //   .style('text-anchor', anchor)
-          //   .attr('transform','rotate(' + r + ')');
-
           this._processTooltip();
           this.set('titleDrawn', (this.titleDrawn === null) ? true : !this.titleDrawn);
         },
@@ -15095,7 +15111,7 @@ PxVisBehaviorTime.datetime = {
             .attr('width',15)
             .attr('fill',color)
             .attr('series-bar-id','bar_' + sid)
-            .attr('transform','translate(-12,' + (-w - 8 * index) + ')');
+            .attr('transform','translate(-12,' + (-3 -w - 8 * index) + ')');
         },
         _computeUnits: function(appendUnitInTitle, completeSeriesConfig, title) {
           var result = '';
@@ -15128,9 +15144,8 @@ PxVisBehaviorTime.datetime = {
         },
         _titleChanged: function(displayedTitle) {
           this.debounce('drawTitle', function() {
-
             if(this._doesObjHaveValues(this._axisGroup) && this._axisGroup.node() !== null && this._axisGroup.node().ownerSVGElement !== null) {
-            // if(this._doesObjHaveValues(this._axisGroup) && this._axisGroup.node() !== null && this._axisGroup.node().ownerSVGElement !== null) {
+
               this.drawTitle();
             }
           }.bind(this), 5);
@@ -15973,8 +15988,7 @@ PxVisBehaviorTime.datetime = {
      */
     _setXScale: function(width,margin) {
       var w = width - margin.left - margin.right;
-      this.x = this._setScale(this.xAxisType,[0, w]);
-      this.notifyPath('x.range', this.x.range);
+      this.set('x', this._setScale(this.xAxisType,[0, w]));
       this.fire('px-vis-x-updated', { 'dataVar': 'x', 'data': this.x, 'method':'set' });
     },
     /**
@@ -15984,8 +15998,7 @@ PxVisBehaviorTime.datetime = {
      */
     _setYScale: function(height,margin) {
       var h = height - margin.top - margin.bottom;
-      this.y = this._setScale(this.yAxisType,[h, 0]);
-      this.notifyPath('y', this.y);
+      this.set('y', this._setScale(this.yAxisType,[h, 0]));
       this.fire('px-vis-y-updated', { 'dataVar': 'y', 'data': this.y, 'method':'set' });
     },
     /**
@@ -16574,15 +16587,6 @@ PxVisBehaviorTime.datetime = {
       // send the register etc an empty list of series
       // this._resetTooltipData();
     },  //drawElement
-    /**
-     * Helper function called on mouseover
-     * Shows the tooltip elements
-     *
-     * @method _clearTooltip
-     */
-    _mouseOOver:function() {
-      // trigger mouseover
-    },
 
     /**
      * Helper function called on mouseout
@@ -16601,7 +16605,6 @@ PxVisBehaviorTime.datetime = {
           keys = Object.keys(this.completeSeriesConfig),
           len = keys.length,
           i;
-
 
       for(i = 0; i < len; i++){
         ttD.series.push({'name':keys[i],'value': null });
@@ -16636,6 +16639,7 @@ PxVisBehaviorTime.datetime = {
 
 
         this.debounce('move',function(){
+
           // TODO Maybe this should be a option: return all val at x or closets vals at cursor
           // invert: takes position on the screen and converts it into an equivalent date
           var minDist = Number.MAX_VALUE,
@@ -18275,13 +18279,21 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       var ne = Polymer.dom(e),
           series = ne.rootTarget.getAttribute('name').substr(1);
 
-      // FIXME period in ID
-      // if it doesnt exist, let's add it and set to true
-      if( typeof(this.mutedSeries[series]) === 'undefined' ) {
-        this.set('mutedSeries.' + series, true);
+      //TODO Polymer 2.0: fix this
+      // make sure we are not dealing with APM's IDs
+      if(series.indexOf('.') === -1) {
+        // if it doesnt exist, let's add it and set to true
+        if( typeof(this.mutedSeries[series]) === 'undefined' ) {
+          this.set('mutedSeries.' + series, true);
+        } else {
+          //if does exist, flip the bit
+          this.set('mutedSeries.' + series, !this.mutedSeries[series]);
+        }
       } else {
-        //if does exist, flip the bit
-        this.set('mutedSeries.' + series, !this.mutedSeries[series]);
+        var muted = this.mutedSeries;
+        this.mutedSeries = [];
+        muted[series] = typeof(muted[series]) === 'undefined' ? true : !muted[series];
+        this.set('mutedSeries', muted);
       }
 
       this.fire('px-vis-muted-series-updated', { 'data': this.mutedSeries[series], 'dataVar': ('mutedSeries.'+series) ,'method': 'set' });
@@ -18778,6 +18790,13 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       },
       _seriesClipPathSvg: {
         type: Object
+      },
+      /**
+       * top offset to be applied to the series clip path
+       */
+      seriesClipPathYOffset: {
+        type: Number,
+        value: 0
       }
     },
 
@@ -18799,16 +18818,16 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
         this.fire('px-vis-clip-path-updated', { 'dataVar': 'clipPath', 'data': this.clipPath, 'method':'set' });
 
         this.svg
-          .append("clipPath")
-          .attr("id",this.clipPath)
-          .append("rect");
+          .append('clipPath')
+          .attr('id',this.clipPath)
+          .append('rect');
 
-        this._clipPathSvg = this.svg.select('clipPath#'+this.clipPath+" rect");
+        this._clipPathSvg = this.svg.select('clipPath#'+this.clipPath+' rect');
       }
       this._clipPathSvg
         .attr('y',-this.margin.top)
-        .attr("width", this.width - this.margin.left)
-        .attr("height", this.height - this.margin.bottom);
+        .attr('width', this.width - this.margin.left)
+        .attr('height', this.height - this.margin.bottom);
 
       if(!this._seriesClipPathSvg) {
 
@@ -18816,15 +18835,17 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
         this.fire('px-vis-series-clip-path-updated', { 'dataVar': 'seriesClipPath', 'data': this.seriesClipPath, 'method':'set' });
 
         this.svg
-          .append("clipPath")
-          .attr("id",this.seriesClipPath)
-          .append("rect");
+          .append('clipPath')
+          .attr('id',this.seriesClipPath)
+          .append('rect');
 
         this._seriesClipPathSvg = this.svg.select('clipPath#'+this.seriesClipPath + ' rect');
       }
       this._seriesClipPathSvg
-        .attr("width", this.width - this.margin.left - this.margin.right)
-        .attr("height", this.height - this.margin.bottom  - this.margin.top);
+        .attr('y', this.seriesClipPathYOffset)
+        .attr('width', this.width - this.margin.left - this.margin.right)
+        .attr('height', this.height - this.margin.bottom  - 
+                        this.margin.top - this.seriesClipPathYOffset);
 
     }
   });
@@ -18903,9 +18924,9 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     <px-vis-gridlines svg="[[svg]]" axis="[[y]]" margin="[[margin]]" length="[[width]]" orientation="left" current-domain="[[currentDomainY]]">
     </px-vis-gridlines>
 
-    <px-vis-axis id="xAxis" svg="[[svg]]" axis="[[x]]" axis-type="time" margin="[[margin]]" height="[[height]]" orientation="bottom" label-position="after" complete-series-config="[[completeSeriesConfig]]" prevent-series-bar="" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
+    <px-vis-axis id="xAxis" svg="[[svg]]" axis="[[x]]" axis-type="time" margin="[[margin]]" width="[[width]]" height="[[height]]" orientation="bottom" label-position="after" complete-series-config="[[completeSeriesConfig]]" prevent-series-bar="" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
     </px-vis-axis>
-    <px-vis-axis id="yAxis" svg="[[svg]]" axis="[[y]]" axis-type="linear" margin="[[margin]]" height="[[height]]" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" domain-changed="[[domainChanged]]" current-domain="[[currentDomainY]]">
+    <px-vis-axis id="yAxis" svg="[[svg]]" axis="[[y]]" axis-type="linear" margin="[[margin]]" width="[[width]]" height="[[height]]" orientation="left" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" domain-changed="[[domainChanged]]" current-domain="[[currentDomainY]]">
     </px-vis-axis>
 
     <px-vis-interaction-space svg="[[svg]]" width="[[width]]" height="[[height]]" margin="[[margin]]" x-axis-type="time" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" selection-type="[[selectionType]]">
@@ -18926,7 +18947,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
           PxVisBehavior.formatting,
           PxVisBehavior.dataset,
           PxVisBehavior.completeSeriesConfig,
-          PxVisBehavior.mutedSeries,
+          PxVisBehavior.muteUnmuteSeries,
           PxVisBehavior.tooltipData,
           PxVisBehavior.extentsData,
           PxVisBehavior.commonMethods,
@@ -18948,7 +18969,8 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
           Polymer.IronResizableBehavior,
           PxVisBehaviorChart.saveImage,
           PxVisBehaviorD3.domainUpdate,
-          PxVisBehaviorChart.subConfiguration
+          PxVisBehaviorChart.subConfiguration,
+          PxVisBehavior.progressiveRendering
         ],
 
         /**
@@ -28698,8 +28720,7 @@ var pxDatetimeBehavior = [{
             &quot;y&quot;:{
               &quot;type&quot;: &quot;scatter&quot;,
               &quot;name&quot;: &quot;mySeries&quot;,
-              &quot;x&quot;:&quot;x&quot;,
-              &quot;y&quot;:&quot;y&quot;
+              &quot;color&quot;: &quot;rgb(120,120,120)&quot;
             }
           }" chart-data="[[chartData3]]" x-axis-config="{
             &quot;title&quot;: &quot;Date&quot;
