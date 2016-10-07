@@ -9509,7 +9509,7 @@ PxVisBehavior.dynamicConfigProperties = [{
       }
     }
   },
-  observers: ['_processConfig(completeSeriesConfig.*)'],
+  observers: ['_processConfig(completeSeriesConfig.*, seriesId)'],
 
   _computeValue: function(configValue, def) {
     return (typeof configValue !== 'undefined' && configValue !== null) ?
@@ -12552,11 +12552,6 @@ PxVisBehaviorTime.datetime = {
       this._watchConfigProperty('markerFillOpacity', 0.6);
       this._watchConfigProperty('markerStrokeOpacity', 1);
       this._watchConfigProperty('mutedOpacity', 0.3);
-
-      // if there is no dev set unique ID, generate one
-      if(!this.seriesId){
-        this.set('seriesId', this.generateRandomID('scatter_'));
-      }
     },
 
     /**
@@ -18995,10 +18990,10 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     <px-vis-threshold svg="[[svg]]" complete-series-config="[[completeSeriesConfig]]" chart-data="[[thresholdData]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" show-threshold-box="[[showThresholdBox]]">
     </px-vis-threshold>
 
-    <px-vis-gridlines svg="[[svg]]" axis="[[x]]" margin="[[margin]]" length="[[height]]" orientation="bottom" current-domain="[[currentDomainX]]">
+    <px-vis-gridlines svg="[[svg]]" axis="[[x]]" margin="[[margin]]" length="[[height]]" orientation="bottom" current-domain="[[currentDomainX]]" domain-changed="[[domainChanged]]">
     </px-vis-gridlines>
 
-    <px-vis-gridlines svg="[[svg]]" axis="[[y]]" margin="[[margin]]" length="[[width]]" orientation="left" current-domain="[[currentDomainY]]">
+    <px-vis-gridlines svg="[[svg]]" axis="[[y]]" margin="[[margin]]" length="[[width]]" orientation="left" current-domain="[[currentDomainY]]" domain-changed="[[domainChanged]]">
     </px-vis-gridlines>
 
     <px-vis-axis id="xAxis" svg="[[svg]]" axis="[[x]]" axis-type="time" margin="[[margin]]" width="[[width]]" height="[[height]]" orientation="bottom" label-position="after" complete-series-config="[[completeSeriesConfig]]" prevent-series-bar="" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
@@ -28696,157 +28691,60 @@ var pxDatetimeBehavior = [{
         <br>
         <span>Open image of chart in new tab</span>
         <button id="btnSnap">Go</button>
-        <px-vis-timeseries id="timeSerie" options="{
-            &quot;width&quot;: &quot;1000&quot;,
-            &quot;height&quot;: &quot;500&quot;,
-            &quot;enableTooltip&quot;:true,
-            &quot;registerLocation&quot;:&quot;both&quot;,
-            &quot;eventConfig&quot;: {
-              &quot;Recalibrate&quot;:{
-                &quot;color&quot;: &quot;blue&quot;,
-                &quot;icon&quot;: &quot;fa-camera&quot;,
-                &quot;type&quot;: &quot;fa&quot;,
-                &quot;offset&quot;:[0,0]
-              },
-              &quot;Fan start&quot;:{
-                &quot;color&quot;: &quot;green&quot;,
-                &quot;icon&quot;: &quot;\uf015&quot;,
-                &quot;type&quot;: &quot;unicode&quot;,
-                &quot;offset&quot;:[1,0]
-              },
-              &quot;Fan stop&quot;:{
-                &quot;icon&quot;: &quot;ge_logo.png&quot;,
-                &quot;type&quot;: &quot;image&quot;,
-                &quot;offset&quot;:[0,-20],
-                &quot;size&quot;:&quot;20&quot;
-              }
-            },
-            &quot;thresholdData&quot;:[
-              { &quot;for&quot;:&quot;y0&quot;, &quot;type&quot;:&quot;max&quot;, &quot;value&quot;:35.4784 },
-              { &quot;for&quot;:&quot;y0&quot;, &quot;type&quot;:&quot;min&quot;, &quot;value&quot;:7.6531 },
-              { &quot;for&quot;:&quot;y0&quot;, &quot;type&quot;:&quot;mean&quot;, &quot;value&quot;:15.330657585139331 },
-              { &quot;for&quot;:&quot;y1&quot;, &quot;type&quot;:&quot;mean&quot;, &quot;value&quot;:75 },
-              { &quot;for&quot;:&quot;&quot;, &quot;type&quot;:&quot;quartile&quot;, &quot;value&quot;:17 }
-            ],
-            &quot;showThresholdBox&quot;:false,
-            &quot;includeAllSeries&quot;: true,
-            &quot;selectionType&quot;: &quot;xAxis&quot;,
-            &quot;xAxisConfig&quot;: {
-              &quot;title&quot;: &quot;Date&quot;,
-              &quot;tickFormat&quot;: &quot;%b %d&quot;
-            },
-            &quot;yAxisConfig&quot;: {
-              &quot;title&quot;: &quot;Hz&quot;
-            }
-          }" series-config="[[seriesConfig]]" default-series-config="{
-              &quot;type&quot;: &quot;line&quot;,
-              &quot;yAxisUnit&quot;: &quot;Hz&quot;,
-              &quot;x&quot;: &quot;TimeStamp&quot;,
-              &quot;xMin&quot;: &quot;dynamic&quot;,
-              &quot;xMax&quot;: &quot;dynamic&quot;,
-              &quot;yMin&quot;: 0,
-              &quot;yMax&quot;: &quot;dynamic&quot;
-            }" chart-data="[[chartData]]" event-data="[[eventData]]" range="[[range]]">
-        </px-vis-timeseries>
-        <px-vis-data id="seriesAjax" request-data="[{
-            &quot;type&quot;:&quot;line&quot;,
-            &quot;name&quot;:&quot;mySeries&quot;,
-              &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/delta-egt-cruise.json&quot;
-            },{
-              &quot;type&quot;:&quot;line&quot;,
-              &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/hpt-acc-position-cruise.json&quot;
-          }]" data-var="originalData" lists="append" response-data="{{originalData}}">
-        </px-vis-data>
-        <px-vis-data-converter data-key="series" id-key="name" original-data="[[originalData]]" series-config="{{seriesConfig}}" chart-data="{{chartData}}">
-        </px-vis-data-converter>
-        <px-vis-data id="eventAjax" request-data="[{
-              &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/delta-egt-cruise-events.json&quot;
-          }]" data-var="eventData" lists="flat" response-data="{{eventData}}">
-        </px-vis-data>
-
-        <br>
-        <br>
-        <h2>Example of a timeseries with mostly default data and using the new data format</h2>
-        <px-vis-timeseries prevent-resize="" width="1000" height="500" include-all-series="" selection-type="xy" chart-data="[[chartData2]]" x-axis-config="{
-            &quot;title&quot;: &quot;Date&quot;
-          }" y-axis-config="{
-            &quot;title&quot;: &quot;Widgets&quot;
-          }">
-        </px-vis-timeseries>
-        <px-vis-data id="seriesAjax" request-data="[{
-              &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json&quot;
-            }]" data-var="chartData2" lists="flat" response-data="{{chartData2}}">
-        </px-vis-data>
-
-        <br>
-        <br>
-        <h2>Example of a timeseries rendering to canvas</h2>
-        <px-vis-timeseries prevent-resize="" width="1000" height="500" include-all-series="" render-to-canvas="" selection-type="xy" chart-data="[[chartData2]]" x-axis-config="{
-            &quot;title&quot;: &quot;Date&quot;
-          }" y-axis-config="{
-            &quot;title&quot;: &quot;Units&quot;
-          }" disable-navigator="">
-        </px-vis-timeseries>
+        
 
         
 
-        <br>
-        <br>
-        <h2>Example of a timeseries with a custom series configuration</h2>
-        <px-vis-timeseries prevent-resize="" width="1000" height="500" selection-type="yAxis" series-config="{
-            &quot;y&quot;:{
-              &quot;type&quot;: &quot;scatter&quot;,
-              &quot;name&quot;: &quot;mySeries&quot;,
-              &quot;color&quot;: &quot;rgb(120,120,120)&quot;
-            }
-          }" chart-data="[[chartData3]]" x-axis-config="{
-            &quot;title&quot;: &quot;Date&quot;
-          }" y-axis-config="{
-            &quot;title&quot;: &quot;Hz&quot;
-          }">
-        </px-vis-timeseries>
-        <px-vis-data id="seriesAjax" request-data="[{
-              &quot;url&quot;:&quot;../px-demo-data/demo-data/aviation/delta-egt-cruiseXY.json&quot;
-            }]" data-var="chartData3" lists="flat" response-data="{{chartData3}}">
-        </px-vis-data>
+        
 
-        <br>
-        <br>
-        <h2>Example of a timeseries with a additional d3 rectangle drawn on top</h2>
-        <px-vis-timeseries id="chartCustom" prevent-resize="" options="{
-            &quot;width&quot;: &quot;1000&quot;,
-            &quot;height&quot;: &quot;500&quot;
-          }" include-all-series="" chart-data="[[chartData3]]" x-axis-config="{
-            &quot;title&quot;: &quot;Date&quot;
-          }" y-axis-config="{
-            &quot;title&quot;: &quot;Temperature&quot;
-          }"></px-vis-timeseries>
+
+          <px-vis-timeseries id="timeseries" options="{&quot;height&quot;: &quot;300&quot;, &quot;enableTooltip&quot;: true, &quot;registerLocation&quot;:&quot;top&quot;, &quot;selectionType&quot;:&quot;xy&quot;, &quot;includeAllSeries&quot;:true}" default-series-config="{&quot;type&quot;: &quot;line&quot;, &quot;yAxisUnit&quot;: &quot;&quot;, &quot;x&quot;: &quot;timestamp&quot;, &quot;xMin&quot;: &quot;dynamic&quot;, &quot;xMax&quot;: &quot;dynamic&quot;, &quot;yMin&quot;: 0, &quot;yMax&quot;: 5}"></px-vis-timeseries>
+
     </template>
     <script>
       window.addEventListener('WebComponentsReady', function() {
-        var chart = document.getElementById('chartCustom'),
-            rangepicker = document.getElementById('rangepicker'),
-            btnSnap = document.getElementById('btnSnap'),
-            timeSerie = document.getElementById('timeSerie');
+        // var chart = document.getElementById('chartCustom'),
+        //     rangepicker = document.getElementById('rangepicker'),
+        //     btnSnap = document.getElementById('btnSnap'),
+        //     timeSerie = document.getElementById('timeSerie');
+        //
+        //   chart.svg.append('rect')
+        //     .attr("y", 200)
+        //     .attr("x", 0)
+        //     .attr("height", 100)
+        //     .attr("width", 1000)
+        //     .attr('opacity',0.25)
+        //     .attr('fill', 'rgb(70,173,0)');
+        //
+        //   rangepicker.range = {
+        //     "from":"2014-04-10T04:01:00.000Z",
+        //     "to":"2015-04-01T20:42:00.000Z"
+        //   };
+        //
+        //   btnSnap.addEventListener('click', function() {
+        //     timeSerie.getCombinedImage(function(result) {
+        //       window.open().location = result.image;
+        //     });
+        //   });
 
-          chart.svg.append('rect')
-            .attr("y", 200)
-            .attr("x", 0)
-            .attr("height", 100)
-            .attr("width", 1000)
-            .attr('opacity',0.25)
-            .attr('fill', 'rgb(70,173,0)');
+          // wait a second after rendering (to emulate data read)
+          setTimeout(function() {
+          	var ts = document.querySelector('#timeseries');
 
-          rangepicker.range = {
-            "from":"2014-04-10T04:01:00.000Z",
-            "to":"2015-04-01T20:42:00.000Z"
-          };
+              if (ts !== null) {
+                  // add series config
+                  ts.seriesConfig = {rank: {name: "Rank", x: "x", y: "rank"}};
 
-          btnSnap.addEventListener('click', function() {
-            timeSerie.getCombinedImage(function(result) {
-              window.open().location = result.image;
-            });
-          });
+                  // add chart data
+                  var rankValues = [];
+                  var baseTimestamp = 1475652641;
+                  for(var i = 0; i < 5; i++) {
+                      rankValues.push({rank: Number(i), x: baseTimestamp + (i * 1000000)});
+                  }
+                  ts.chartData = rankValues;
+              }
+          }, 1000);
+
       });
     </script>
     
