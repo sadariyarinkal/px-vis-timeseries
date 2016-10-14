@@ -8437,7 +8437,9 @@ var commonColors = {
         "dv-light-grey": "rgb(140,140,140)",
         "dv-dark-brown": "rgb(157,114,42)",
         "dv-light-purple": "rgb(188,153,199)",
-        "dv-basic-yellow": "rgb(222,207,63)"
+        "dv-basic-yellow": "rgb(222,207,63)",
+        "dv-dark-gray": "rgb(0,0,0)",
+        "dv-dark-grey": "rgb(0,0,0)"
 }
     },
     /**
@@ -8766,7 +8768,14 @@ PxVisBehavior.dataset = {
         type: Array,
         notify: true
       }
-    }
+    },
+    /**
+     * returns true if the data is valid: non NaN, null or undefined
+     */
+    _isValidData: function(d) {
+      //false and "" will return false, which is fine as they're not valid data
+      return d || d === 0;
+    },
 };
 
 /*
@@ -8917,25 +8926,45 @@ PxVisBehavior.tooltipData = {
      * Data reported back by the interaction space component. Displays the series name, values, and timestamp in the register. tooltipData is in the form:
      *
      *```
-     *   {
-     *     'time': d3TimeStamp,
-     *     'series': [
-     *       {'name':'seriesName0','value': seriesVal0 },
-     *       {'name':'seriesName1','value': seriesVal1 }
-     *     ]
-     *   }
+     *    {
+     *        "time": "2015-03-25T20:34:47.085Z",
+     *        "series":[{
+     *            "name":"seriesId1",
+     *            "coord":[xCoord1, yCoord1],  //in pixel space
+     *            "value":{
+     *                "x":xVal1,             //in data space
+     *                "seriesId1":yVal1    //in data space
+     *            }
+     *        },{
+     *            "name":"seriesId2",
+     *            "coord":[xCoord2, yCoord2],  //in pixel space
+     *            "value":{
+     *                "x":xVal2,             //in data space
+     *                "seriesId2":yVal2    //in data space
+     *            },
+     *        }],
+     *        "mouse":[ mouseX, mouseY ],   //in pixel space
+     *        "xArr":[xCoord1 , xCoord2],   //in pixel space
+     *        "yArr":[yCoord1 , yCoord2],   //in pixel space
+     *    }
      *```
      *
      * When not hovering on a chart, the tooltipData should still have the series names in order for them to still appear in the register. IE:
      *
      *```
-     *   {
-     *     'time': null,
-     *     'series': [
-     *       {'name':'seriesName0','value': null },
-     *       {'name':'seriesName1','value': null }
-     *     ]
-     *   }
+     *    {
+     *        "time": null,
+     *        "series":[{
+     *            "name":"seriesId1",
+     *            "value": null
+     *        },{
+     *            "name":"seriesName1",
+     *            "value": null
+     *        }],
+     *        "mouse": null,
+     *        "xArr": null,
+     *        "yArr": null
+     *    }
      *```
      *
      * @property tooltipData
@@ -9058,6 +9087,12 @@ PxVisBehavior.commonMethods = {
    */
   _getPieColorForIndex: function(index) {
     return commonColors.properties.dataVisColors.value[commonColors.properties.seriesColorOrder.value[index]];
+  },
+  /**
+   * escapes '.' in css selectors so that we can appropriately select stuff with dots in thei ids
+   */
+  _escapeCssSelector: function(selector) {
+    return selector.replace('.', '\\.');
   }
 };
 
@@ -9492,7 +9527,7 @@ PxVisBehavior.seriesId = {
     PxVisBehavior.dynamicConfigProperties
 
     Description:
-    Polymer behavior that allows the dynamic creation of properties that will be 
+    Polymer behavior that allows the dynamic creation of properties that will be
     searched for in the completeSeriesConfig
 
     Dependencies:
@@ -9502,6 +9537,10 @@ PxVisBehavior.seriesId = {
 */
 PxVisBehavior.dynamicConfigProperties = [{
   properties: {
+    /**
+      * A list of the dynamic properties
+      *
+      */
     _dynamicProperties: {
       type: Array,
       value: function() {
@@ -9509,13 +9548,22 @@ PxVisBehavior.dynamicConfigProperties = [{
       }
     }
   },
+
   observers: ['_processConfig(completeSeriesConfig.*, seriesId)'],
 
+  /**
+    * Decides if it should use a default or user specified value
+    *
+    */
   _computeValue: function(configValue, def) {
     return (typeof configValue !== 'undefined' && configValue !== null) ?
                               configValue : def;
   },
 
+  /**
+    * sets each property listed in dynamicProperies
+    *
+    */
   _processConfig: function(completeSeriesConfig, seriesId) {
 
     var conf = this.completeSeriesConfig[this.seriesId],
@@ -9526,6 +9574,10 @@ PxVisBehavior.dynamicConfigProperties = [{
     }
   },
 
+  /**
+    * Cycles through properties and adds them to dynamic properties
+    *
+    */
   _watchConfigProperty: function(name, defValue) {
     this.push('_dynamicProperties', name);
     this['_default' + name] = defValue;
@@ -9537,8 +9589,35 @@ PxVisBehavior.dynamicConfigProperties = [{
       this[name] = this._computeValue(conf[name], defValue);
     }
   }
-  
+
 },PxVisBehavior.completeSeriesConfig, PxVisBehavior.seriesId];
+
+
+
+/*
+    Name:
+    PxVisBehavior.radial
+
+    Description:
+    Polymer behavior that provides the radial definition
+
+    Dependencies:
+    - D3.js
+
+    @polymerBehavior PxVisBehavior.radial
+*/
+PxVisBehavior.radial = {
+  properties: {
+    /**
+     * Boolean specifying if the chart is a polar chart or a cartesian chart
+     *
+     */
+    radial: {
+      type: Boolean,
+      value: false
+    }
+  }
+};
 
 </script>
 <script>
@@ -9793,8 +9872,9 @@ PxVisBehaviorD3.svg = {
                   resultCanvas: canvas};
     canvg(canvas, svgData, options);
   },
+
   /**
-   *
+   * Tries to draw the SVG to canvas and if that doesnt work, falls back on a failure callback
    */
   _nativeDrawSvgOnCanvas: function(canvas, svgData, x, y, sucessCallback, failureCallback) {
     //detect canvas tainting failures
@@ -9819,7 +9899,9 @@ PxVisBehaviorD3.svg = {
 
       img.src = url;
   },
-
+  /**
+   * fix for IE to get outer HTML
+   */
   _getSVGOuterHtml: function(svg) {
     var serializeXML = function(node, output) {
       var nodeType = node.nodeType;
@@ -10512,10 +10594,15 @@ PxVisBehaviorD3.radialLineGenerator = [{
       type: Object
     },
 
+    /**
+    * sets a minimum value for the line amplitude. Points less than the lineRadiusLimit will be set to the limit
+    *
+    */
     lineRadiusLimit: {
       type: Number
     }
   },
+
   /**
    * Defines a multi-scale d3 line generator and its attrs
    *
@@ -10553,7 +10640,7 @@ PxVisBehaviorD3.radialLineGenerator = [{
         }
         return radius
       }).defined(function(d) {
-        return !isNaN(_this.x(d[0])) && !isNaN(_this.y(Number(d[1])));
+        return _this._isValidData(_this.x(d[0])) && _this._isValidData(_this.y(Number(d[1])));
       });
 
       //be sneaky: iterate through the data like normal
@@ -10590,7 +10677,7 @@ PxVisBehaviorD3.radialLineGenerator = [{
       .radius(function(d) {
         return _this.y(d[yId]);
       }).defined( function(d) {
-        return !isNaN(d[xId]) && !isNaN(d[yId]);
+        return _this._isValidData(d[xId]) && _this._isValidData(d[yId]);
       });
 
       line = function(d) {
@@ -10608,7 +10695,7 @@ PxVisBehaviorD3.radialLineGenerator = [{
     }
     this.set('line', line);
   }
-}, PxVisBehavior.completeSeriesConfig];
+}, PxVisBehavior.completeSeriesConfig, PxVisBehavior.dataset];
 
 /*
     Name:
@@ -10754,7 +10841,7 @@ PxVisBehaviorD3.lineShared = [{
               return ~~_this.y(d[yKey]);
           })
           .defined(function(d) {
-            return !isNaN(d[yKey]);
+            return _this._isValidData(d[yKey]);
           });
 
     if(this.interpolationFunction){
@@ -10891,6 +10978,13 @@ PxVisBehaviorChart.chartCommon = [{
         type: Boolean,
         notify: true,
         value: false
+      },
+      /**
+       *  Representes the keys avaiable in completeSeriesConfig. It's being set 
+       *  before completeSeriesConfig is set
+       */
+      _seriesKeys: {
+        type: Array
       }
     },
 
@@ -10898,6 +10992,9 @@ PxVisBehaviorChart.chartCommon = [{
       '_setCompleteSeriesConfig(defaultSeriesConfig.*,chartData.*,seriesConfig.*)'
     ],
 
+    /**
+    * Calcs the extents of the charts
+    */
     _calcChartExts: function(mins,maxes,axis){
       if(this[axis + 'AxisType'] === 'ordinal'){
         // how should someone set the ordinal list? Differet key in seriesConfig?
@@ -10937,7 +11034,12 @@ PxVisBehaviorChart.chartCommon = [{
             yMins = [],
             yMaxes = [],
             missingYs,
-            x;
+            x,
+            isUpdate = this.completeSeriesConfig ? true : false,
+            addedSeriesKeys = [],
+            removedSeriesKeys = [],
+            updatedSeriesKeys = [];
+
         if(k.length === 0 && !this.includeAllSeries){
           console.warn("No series were added to the chart. Either add them in the seriesConfig or turn on includeAllSeries");
           return;
@@ -11021,13 +11123,62 @@ PxVisBehaviorChart.chartCommon = [{
           }
         }
 
+        //if this is an update bof series config find out additions/deletions
+        var deletion = false,
+            addition = false;
+        if(isUpdate) {
+          var currKeys = Object.keys(this.completeSeriesConfig),
+              newKeys = Object.keys(fullConfig);
+
+          //process updates and additions
+          for(var i=0; i<newKeys.length; i++) {
+            if(currKeys.includes(newKeys[i])) {
+              updatedSeriesKeys.push(newKeys[i]);
+            } else {
+              addedSeriesKeys.push(newKeys[i]);
+              addition = true;
+            }
+          }
+
+          //process deletions
+          for(var i=0; i<currKeys.length; i++) {
+            if(!newKeys.includes(currKeys[i])) {
+              removedSeriesKeys.push(currKeys[i]);
+              deletion = true;
+            } 
+          }
+        }
+
+        if(deletion) {
+          //we need to flush before setting completeSeriesConfig for deletion
+          //but need setting completeSeriesConfig before flushing for additions.
+          //Process the deletions first and we will process the addtions after setting
+          //completeseriesconfig (if needed)
+          this.set('_seriesKeys', updatedSeriesKeys);
+
+          //make sure we flush for all the components dom-repeating over _seriesKeys:
+          //if a serie needs to be removed this should be processed before we pass
+          //the new completeSeriesConfig or observers will run on the not-yet deleted serie
+          Polymer.dom.flush();
+        } else {
+          //update or addition
+          this.set('_seriesKeys', Object.keys(fullConfig));
+        }
+
         this.fire('px-vis-chart-extents', { 'dataVar': 'chartExtents', 'data': this.chartExtents, 'method':'set' });
-        this.notifyPath('chartExtents',this.chartExtents);
+        this.notifyPath('chartExtents', this.chartExtents);
 
         this.fire('px-vis-complete-series-config', { 'dataVar': 'completeSeriesConfig', 'data': fullConfig, 'method':'set' });
-        this.set('completeSeriesConfig',fullConfig);
+        this.set('completeSeriesConfig', fullConfig);
+
+        if(deletion && addition) {
+          //we have processed updates and deleton, now need to process the additions
+          //now that we have the new completeSeriesConfig process the additions
+          this.set('_seriesKeys', Object.keys(fullConfig));
+        } 
       }
     },
+
     /**
      * Helper function to return the correct color for a particular index.
      **/
@@ -11036,6 +11187,7 @@ PxVisBehaviorChart.chartCommon = [{
           index = this._calcIndex(i,l);
       return this.dataVisColors[this.seriesColorOrder[ index ]];
     },
+
     /**
      * Helper function to calculate the index. When we run out of indcies, it loops back over valid indicies.
      **/
@@ -11046,36 +11198,39 @@ PxVisBehaviorChart.chartCommon = [{
     /**
      * Helper function for the register. Returns true if the side register should exist
      *
-     * @method _sideRegister
      */
     _sideRegister:function(location){
       return location === 'side' || location === 'both';
     },
+
     /**
      * Helper function for the register. Returns true if the top register should exist
      *
-     * @method _topRegister
      */
     _topRegister:function(location){
       return location === 'top' || location === 'both';
     },
+
     /**
      * Helper function for the line series. Returns true if the series is a line
      *
-     * @method _chartTypeLine
      */
     _chartTypeLine: function(key,obj){
         return obj[key]['type'] === 'line';
     },
+
     /**
      * Helper function for the line series. Returns true if the series is a line
      *
-     * @method _chartTypeLine
      */
     _chartTypeScatter: function(key,obj){
       return obj[key]['type'] === 'scatter';
     },
 
+    /**
+     * returns the keys of an object
+     *
+     */
     _returnKeys: function(obj){
       return Object.keys(obj);
     }
@@ -11291,6 +11446,17 @@ PxVisBehaviorChart.subConfiguration = {
     },
 };
 
+/**
+    Name:
+    PxVisBehaviorChart.timeFiltering
+
+    Description:
+    Polymer behavior that allows to filter chartData based on time, providing a _filteredData object
+
+    Dependencies:
+
+    @polymerBehavior PxVisBehaviorChart.timeFiltering
+*/
 PxVisBehaviorChart.timeFiltering = [{
   properties: {
     /**
@@ -11318,6 +11484,10 @@ PxVisBehaviorChart.timeFiltering = [{
       computed: '_filterData(chartData, timeDomain, timeData)'
     }
   },
+
+  /**
+   * returns a filtered dataset based on the time domain
+   */
   _filterData: function(chartData, timeDomain, timeData) {
 
     if(timeDomain.x && timeDomain.x.length === 2) {
@@ -11534,37 +11704,11 @@ PxVisBehaviorTime.datetime = {
          * @property properties
          * @type Object
          */
-        properties: {
-        },
+        properties: {},
 
         observers: [
           '_setSVG(width,height,margin,offset.*)'
         ],
-
-
-
-        /**
-         *  When ready, let's find out who our children are
-         */
-        // ready: function() {
-        //   // Polymer.dom(this).observeNodes(this._onEffectiveDomUpdated.bind(this));
-        // },
-        // created: function(){
-        // },
-        // attached: function() {
-        // },
-
-        // _onEffectiveDomUpdated: function (info) {
-        //   this.async(function () {
-        //     info.addedNodes.forEach(this._onNodeAdded.bind(this));
-        //   });
-        // },
-        // _onNodeAdded: function (node) {
-        //   if (!(node instanceof Text)) {
-        //     node.__map = this.map;
-        //     this._childElems.push(node);
-        //   }
-        // },
 
         /**
         * when attached, re-fire set properties for precipitation pattern, as well as the svg element that's inside px-svg.
@@ -11576,7 +11720,6 @@ PxVisBehaviorTime.datetime = {
             this.fire('px-vis-svg-updated',{ 'data': this.svg, 'dataVar': 'svg', 'method': 'set' });
             this.fire('px-vis-svg-element-updated', {'data': this.$.chartSVG, 'dataVar': 'pxSvgElem', 'method': 'set'});
           }
-
         },
 
         /**
@@ -11739,14 +11882,8 @@ PxVisBehaviorTime.datetime = {
          * @property properties
          * @type Object
          */
-        properties: {
-        },
+        properties: {},
 
-        // listeners: {
-        //   'px-vis-svg-updated'              : '_refireEvent',
-        //   'px-vis-svg-element-updated'      : '_refireEvent',
-        //   'px-vis-canvas-context-updated'   : '_refireEvent'
-        // },
         /**
          * Refires the caught events for precipitation pattern. We must refire because canvas and svg are "local" properties and thus the depth of their origin matters.
          *
@@ -11774,6 +11911,7 @@ PxVisBehaviorTime.datetime = {
       PxVisBehaviorD3.canvas,
       PxVisBehaviorD3.lineShared,
       PxVisBehaviorD3.axes,
+      PxVisBehavior.sizing,
       PxVisBehavior.dataset,
       PxVisBehavior.mutedSeries,
       PxVisBehavior.commonMethods,
@@ -11832,7 +11970,22 @@ PxVisBehaviorTime.datetime = {
       mutedOpacity: {
         type: Number,
         value: 0.3
-      }
+      },
+      /**
+       * Holder for our data for clipPath
+       *
+       */
+      _clipData: {
+        type: Array
+      },
+      /**
+       * Holder for our data for clipPath
+       *
+       */
+      clipPath: {
+        type: Boolean,
+        value: false
+      },
     },
 
     observers: [
@@ -11880,6 +12033,10 @@ PxVisBehaviorTime.datetime = {
           // this.canvasContext.clearRect(0, -1, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
         }
 
+        if(this.clipPath) {
+          this.drawClipPath();
+        }
+
         //Render data progressively
         this.canvasContext.lineWidth = 1;
         if(this.noCanvasProgressiveRendering) {
@@ -11894,6 +12051,71 @@ PxVisBehaviorTime.datetime = {
       },20);
     },
 
+    /**
+     * Draws a clip path for canvas
+     *
+     */
+    drawClipPath: function() {
+
+      if(this.radialLine) {
+        this._drawRadarClipPath();
+      } else {
+        this._drawRectClipPath();
+      }
+    },
+
+    /**
+     * draws a clip path for radar
+     */
+    _drawRadarClipPath: function() {
+      //start off resetting our saved canvas
+      this._generateRadarClipData();
+      //save our empty state
+      this.canvasContext.save();
+      //clear it (need to recent to 0,0 for clearing)
+      this.canvasContext.clearRect(-this.canvasContext.canvas.width / 2, -this.canvasContext.canvas.height/ 2, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
+
+      this.canvasContext.beginPath();
+
+      this.line(this._clipData[0]);
+      this.line(this._clipData[1]);
+
+      this.canvasContext.clip("evenodd");
+    },
+    /**
+     * Draws a rectangular clip path for cartesian charts
+     */
+    _drawRectClipPath: function() {
+      this.canvasContext.save();
+      //clear it (need to recent to 0,0 for clearing)
+      this.canvasContext.clearRect(-1, -1, this.canvasContext.canvas.width, this.canvasContext.canvas.height);
+      this.canvasContext.beginPath();
+
+      var w = this.width - this.margin.left - this.margin.right,
+          h = this.height - this.margin.top - this.margin.bottom;
+
+      this.canvasContext.rect(0, 0, w, h);
+      this.canvasContext.clip();
+    },
+
+    /**
+     * Generates the edges for the radar clip path
+     *
+     */
+    _generateRadarClipData: function() {
+       var clipData = [{},{}];
+       for(var i = 0; i < this.completeSeriesConfig[this.seriesId]['x'].length; i++) {
+         clipData[0][ this.completeSeriesConfig[this.seriesId]['x'][i] ] = this.currentDomainY[0];
+         clipData[1][ this.completeSeriesConfig[this.seriesId]['x'][i] ] = this.currentDomainY[1];
+       }
+
+       this.set('_clipData' , clipData);
+     },
+
+    /**
+    * if progressive rendering is disabled, draws all the lines and renders them in one batch
+    *
+    */
     _renderAtOnce: function(data) {
 
       //data format
@@ -11949,8 +12171,9 @@ PxVisBehaviorTime.datetime = {
 
         }
         this.canvasContext.stroke();
+
         //clean up drawing
-        this._clearCanvasMargins();
+        this._renderingEnded(false);
       }
     },
 
@@ -12026,11 +12249,11 @@ PxVisBehaviorTime.datetime = {
 
         if(currentIndex < numberOfFrames) {
           //continue processing
+          _this.fire('px-vis-line-canvas-progressive-batch', { "numberOfFrames": numberOfFrames, "currentFrame":currentIndex });
           timer(processColoredDataSlice);
         } else {
           //finished drawing, reset drawing request counter
-          _this._progressiveRenderingCounter = 0;
-          _this.fire('px-vis-line-progressive-rendering-ended', {numberOfFrames: numberOfFrames});
+          _this._renderingEnded(true, numberOfFrames);
         }
       };
 
@@ -12046,9 +12269,9 @@ PxVisBehaviorTime.datetime = {
         var d = batches[currentIndex],
             opacity;
         _this.canvasContext.beginPath();
-        
+
         for(var i = 0; i < d.length; i++) {
-          
+
           opacity = _this._isSerieMuted(d) ? _this.mutedOpacity : 1;
           if(opacity !== 0) {
             _this.line(d[i]);
@@ -12062,12 +12285,11 @@ PxVisBehaviorTime.datetime = {
 
         if(currentIndex < numberOfFrames) {
           //continue processing
+          _this.fire('px-vis-line-canvas-progressive-batch', { "numberOfFrames": numberOfFrames, "currentFrame":currentIndex });
           timer(processGenericDataSlice);
         } else {
           //end, clean up
-          _this._clearCanvasMargins();
-          _this._progressiveRenderingCounter = 0;
-          _this.fire('px-vis-line-progressive-rendering-ended', {numberOfFrames: numberOfFrames});
+          _this._renderingEnded(true, numberOfFrames);
         }
       };
       //END PROCESSING FUNCTIONS
@@ -12102,16 +12324,23 @@ PxVisBehaviorTime.datetime = {
 
       timer(processFunction);
     },
+
     /**
      * Used to 'clear' the canvas fater drawing in case we drew outside our limits.
      * We might want to consider using a clippath instead
      */
-    _clearCanvasMargins: function() {
-      //TODO: fix properly so we use some kind of margin
-      this.canvasContext.clearRect(0, -1, this.canvasContext.canvas.width, -30);
-      this.canvasContext.clearRect(0, this.canvasContext.canvas.height - 65, this.canvasContext.canvas.width, 65);
-      this.canvasContext.clearRect(0, -30, -50, this.canvasContext.canvas.height + 30);
+    _renderingEnded: function(progressive,numberOfFrames) {
+      //restore our context for safety
+      this.canvasContext.restore();
+
+      if(progressive){
+        this._progressiveRenderingCounter = 0;
+        this.fire('px-vis-line-progressive-rendering-ended', {"numberOfFrames": numberOfFrames });
+      }
+
+      this.fire('px-vis-line-canvas-rendering-ended', { "progressiveRending": progressive });
     },
+
     /**
      * Checks mutedSeries to see if this ID is in there
      * Called from an observer watching mutedSeries
@@ -12128,6 +12357,7 @@ PxVisBehaviorTime.datetime = {
         return this.mutedSeries[this.seriesId] ? true : false;
       }
     },
+
     /**
      * Returns the correct rgba to use for the canvas line.
      *
@@ -12142,6 +12372,11 @@ PxVisBehaviorTime.datetime = {
       }
       return null;
     },
+    
+    /**
+     * adds alpha to an rgb value
+     *
+     */
     rgbToRgba: function(rgb, opacity) {
       //assuming rgb is correctly formatted...
       //remove ')'
@@ -12259,11 +12494,13 @@ PxVisBehaviorTime.datetime = {
       'drawElement(svg,domainChanged,chartData.*,completeSeriesConfig.*, counterClockwise)',
       'isIdInMuted(mutedSeries.*, completeSeriesConfig)',
       '_addClipPath(clipPath)'
-     ],
-     ready: function() {
-       this._watchConfigProperty('mutedOpacity', 0.3);
-     },
-
+    ],
+    ready: function() {
+      this._watchConfigProperty('mutedOpacity', 0.3);
+    },
+    detached: function() {
+      this.linePath.remove();
+    },
     /**
      * Draws or updates the line element.
      * Called from an observer watching for data and the necessary d3 objects
@@ -12293,7 +12530,7 @@ PxVisBehaviorTime.datetime = {
         }
 
         // set our data
-         var lineBuilder = this.lineGroup.selectAll('path.series-line')
+          var lineBuilder = this.lineGroup.selectAll('path.series-line')
           .data(data);
 
         // When datapoints disappear from our data, remove them
@@ -12435,6 +12672,10 @@ PxVisBehaviorTime.datetime = {
         type:Number,
         value:0
       },
+      /**
+       * Maps dev input markers to d3 symbols
+       *
+       */
       _markerMapping: {
         type: Object,
         readOnly: true,
@@ -12589,14 +12830,14 @@ PxVisBehaviorTime.datetime = {
       this.scatterBuilder.enter()
         .append('path')
         .attr('class', 'symbol')
-        .on('mouseover', this._showTooltip.bind(this))
-        .on('mouseleave', this._hideTooltip.bind(this))
+        .on('mouseover', this._mouseEnterSymbol.bind(this))
+        .on('mouseleave', this._mouseLeaveSymbol.bind(this))
       .merge(this.scatterBuilder)
         .attr('d', Px.d3.symbol().type(this._markerMapping[this.markerSymbol]).size(this.markerSize))
         .attr('transform', this._applyTransform.bind(this))
         .each(function(d,i) {
           // if this series is missing a datapoint, remove that point
-          if(isNaN(d[_this.completeSeriesConfig[_this.seriesId]['y']])){
+          if(!_this._isValidData(d[_this.completeSeriesConfig[_this.seriesId]['y']])) {
             this.remove();
           }
         });
@@ -12608,6 +12849,22 @@ PxVisBehaviorTime.datetime = {
       this._addClipPath();
     },
 
+    /**
+     * Mouseevent when mouse enters
+     *
+     */
+    _mouseEnterSymbol: function(d, i, paths) {
+
+      this._showTooltip(d, i, paths);
+      if(!this.mutedSeries[this.seriesId]) {
+
+      //if radial make sur eon hover we have 100% opacity
+      Px.d3.event.currentTarget.setAttribute('fill-opacity', 1);
+      }
+    },
+    /**
+     * generates tooltipData
+     */
     _showTooltip: function(d, i, paths) {
 
       // setup a holder for our data to pass out
@@ -12634,6 +12891,22 @@ PxVisBehaviorTime.datetime = {
       this.fire('px-vis-tooltip-updated', { 'dataVar': 'tooltipData', 'data': dataObj, 'method':'set' });
       this.fire('px-vis-scatter-request-tooltip', {'show': true, 'mouseCoords': center});
     },
+    /**
+     * Mousevent on leave
+     */
+    _mouseLeaveSymbol: function(d) {
+      this._hideTooltip(d);
+
+      if(!this.mutedSeries[this.seriesId]) {
+
+        //if radial make sur eon hover we have 100% opacity
+        Px.d3.event.currentTarget.setAttribute('fill-opacity', this.markerFillOpacity);
+      }
+    },
+
+    /**
+     * Resets tooltipData
+     */
     _hideTooltip: function(d) {
       var dataObj = {
         'time': null,
@@ -12646,14 +12919,16 @@ PxVisBehaviorTime.datetime = {
       this.fire('px-vis-tooltip-updated', { 'dataVar': 'tooltipData', 'data': dataObj, 'method':'set' });
       this.fire('px-vis-scatter-request-tooltip', {'show': false});
     },
+
     /**
      * Helper to call addClipPath with the elem
      *
      * @method _addClipPath
      */
-    _addClipPath: function(){
+    _addClipPath: function() {
       this.addClipPath(this.scatterGroup);
     },
+
     /**
      * Checks mutedSeries to see if this ID is in there
      * Called from an observer watching mutedSeries
@@ -12662,21 +12937,22 @@ PxVisBehaviorTime.datetime = {
      */
     isIdInMuted: function() {
       if(this.mutedSeries.hasOwnProperty(this.seriesId)){
-       
+
         this._colorScatter();
       }
     },
+
     /**
      * Applies the necessary translate and scale to the scatterDots
      *
      */
     _applyTransform: function(d) {
 
-      if(isNaN(d[this.completeSeriesConfig[this.seriesId]['y']])){
+      if(!this._isValidData(d[this.completeSeriesConfig[this.seriesId]['y']])) {
         return '';
       }
 
-      if(this.radial) { 
+      if(this.radial) {
 
         var coors = this.line([d]).slice(1).slice(0, -1);
         return 'translate(' + coors + ')' + ' scale(' + this.markerScale + ')';
@@ -12699,12 +12975,13 @@ PxVisBehaviorTime.datetime = {
         return 'translate(' + xTrans + ',' + yTrans + ')' + ' scale(' + this.markerScale + ')';
       }
     },
+
     /**
      * Adds full color to the scatters.
      *
      * @method _colorScatter
      */
-    _colorScatter:function(){
+    _colorScatter:function() {
       var index = this.seriesNumber,
           muted = this.mutedSeries[this.seriesId];
       this.scatterDots
@@ -14581,6 +14858,10 @@ PxVisBehaviorTime.datetime = {
     _formatDatetime: function(time,format){
       return this.formatTimestamp(time, this.timezone, format);
     },
+    /**
+     * returns the title value to the tooltip
+     *
+     */
     _getValueTitle: function(xAxisType) {
       if(xAxisType === 'time') {
         return 'Timestamp';
@@ -14588,6 +14869,10 @@ PxVisBehaviorTime.datetime = {
         return 'X';
       }
     },
+    /**
+     * returns the value of the x
+     *
+     */
     _getValue: function(xAxisType) {
       if(xAxisType === 'time') {
         return ': ' + this._formatDatetime(this.eventData[this.xKey], this.firstDateTimeFormat) +
@@ -14748,6 +15033,10 @@ PxVisBehaviorTime.datetime = {
             type: Boolean,
             value: false
           },
+          /**
+           * Holder for the title g
+           *
+           */
           _titleGroup: {
             type: Object
           }
@@ -14762,15 +15051,15 @@ PxVisBehaviorTime.datetime = {
           '_truncateTitle(title, truncationLength, appendUnitInTitle, completeSeriesConfig)'
         ],
 
-        ready: function(){
+        ready: function() {
           // if there is no dev set unique ID, generate one
-          if(!this.axisId){
+          if(!this.axisId) {
             this.set('axisId', this.generateRandomID('axis_'));
           }
         },
 
-        attached: function(){
-          if(this._axisGroup){
+        attached: function() {
+          if(this._axisGroup) {
             // alert parents that we are done drawing the axis
             this.fire('px-axis-done');
           }
@@ -14780,9 +15069,9 @@ PxVisBehaviorTime.datetime = {
          * sets up this._axis as a d3 axis object.
          *
          */
-        defineAxis: function(){
+        defineAxis: function() {
 
-          switch(this.orientation){
+          switch(this.orientation) {
             case 'bottom':
               this._axis = Px.d3.axisBottom(this.axis);
               break;
@@ -14802,7 +15091,10 @@ PxVisBehaviorTime.datetime = {
 
           this._processTicks();
         },
-
+        /**
+         * Examines what tick configs we have and applies them if relevant
+         *
+         */
         _processTicks: function() {
           //support for general ticks setting
           // https://github.com/d3/d3-axis#axis_ticks
@@ -14842,7 +15134,10 @@ PxVisBehaviorTime.datetime = {
             }
           }
 
+          //support for tick values
+          // https://github.com/d3/d3-axis/blob/master/README.md#axis_tickValues
           if(this.tickValues && this.tickValues.length > 0 && this.axisType !== 'ordinal'){
+            //dont run if our domain is NaN. Otherwise raises errors
             if(!isNaN(this.axis.domain()[0]) && !isNaN(this.axis.domain()[1])){
               this._axis.tickValues(this.tickValues);
             }
@@ -14852,7 +15147,7 @@ PxVisBehaviorTime.datetime = {
           // this._axis.tickSizeInner(this.innerTickSize);
           // this._axis.tickPadding(10);
           // controls the first and last ticks
-          // TODO rename var names to match new d3
+          // TODO rename var names to match new d3?
           this._axis.tickSizeOuter(this.outerTickSize);
 
           //if we want to turn off ticks and labels
@@ -14952,19 +15247,26 @@ PxVisBehaviorTime.datetime = {
           this.fire('px-axis-done');
         },
 
-
+        /**
+         * Updates our ticks
+         *
+         */
         _updateTicks: function() {
           if(this.axis && this.margin && this.height && typeof this.disableTicks !== 'undefined') {
             this.drawElement();
           }
         },
 
+        /**
+         * return the drawn tick values
+         *
+         */
         _calcDrawnTicks: function() {
           if(this.axisType !== 'ordinal') {
             //apparently we need to give ourselves a bit of time to ensure the axis draws and it can clac this
             this.debounce("drawnTicks", function(){
+              // FIXME Only works if ticks is a Number; need to support other formats for ticks
               if(this.ticks){
-                console.log('tick values: ' + this._axis.scale().ticks(this.ticks))
                 this.set('drawnTickValues', this._axis.scale().ticks(this.ticks));
               } else {
                 this.set('drawnTickValues', this._axis.scale().ticks());
@@ -14979,11 +15281,11 @@ PxVisBehaviorTime.datetime = {
          */
         updateTicks: function(){
           if(this._doesObjHaveValues(this._axis) && this._axisGroup && this._doesObjHaveValues(this.tickValues)){
-              this._axis.tickValues(this.tickValues);
-              //beats me why we need a timeout... some kind of nonsensical race condition.
-              setTimeout(function(){
-                this._updateAxis();
-              }.bind(this),5);
+            this._axis.tickValues(this.tickValues);
+            //beats me why we need a timeout... some kind of nonsensical race condition.
+            setTimeout(function(){
+              this._updateAxis();
+            }.bind(this),5);
           }
         },
 
@@ -15034,7 +15336,6 @@ PxVisBehaviorTime.datetime = {
         /**
          * Sets the d3 attrs for the labels
          *
-         * @method _setLabelStyles
          */
         _setLabelStyles:function(elem) {
           elem.selectAll('text')
@@ -15078,7 +15379,6 @@ PxVisBehaviorTime.datetime = {
         /**
          * Sets the axis line styles
          *
-         * @method _setLineStyles
          */
         _setLineStyles:function(elem,lines) {
           elem.selectAll(lines)
@@ -15091,7 +15391,6 @@ PxVisBehaviorTime.datetime = {
         /**
          * Draws the axis title
          *
-         * @method drawTitle
          */
         drawTitle:function() {
           var ext = this._axisGroup.node().getBBox(),
@@ -15135,31 +15434,33 @@ PxVisBehaviorTime.datetime = {
               break;
           }
 
-        if(!this._titleGroup) {
-          this._titleGroup = this.svg.append('g')
-            .attr('class','title-group')
-            .attr('for', this.axisId)
-            .attr('transform','translate(' + x + ',' + y + ')');
+          if(!this._titleGroup) {
+            this._titleGroup = this.svg.append('g')
+              .attr('class','title-group')
+              .attr('for', this.axisId)
+              .attr('transform','translate(' + x + ',' + y + ')');
 
-          this._titleGroup.append('text')
-            .attr('class','axis-title')
-            .attr('fill',this.colors[this.axisColor])
-            .attr('font-size', this.titleTypeSize + 'px')
-            .style('font-family','GE Inspira Sans')
-            // .attr('font-style','GE Inspira Sans')
-            .text(this.displayedTitle)
-            .attr('text-anchor', anchor)
-            .style('text-anchor', anchor)
-            .attr('transform','rotate(' + r + ')');
+            this._titleGroup.append('text')
+              .attr('class','axis-title')
+              .attr('fill',this.colors[this.axisColor])
+              .attr('font-size', this.titleTypeSize + 'px')
+              .style('font-family','GE Inspira Sans')
+              // .attr('font-style','GE Inspira Sans')
+              .text(this.displayedTitle)
+              .attr('text-anchor', anchor)
+              .style('text-anchor', anchor)
+              .attr('transform','rotate(' + r + ')');
 
           } else {
-              this.svg.select('g.title-group[for=' + this.axisId + ']')
-                .attr('transform','translate(' + x + ',' + y + ')');
-              this.svg.select('g.title-group[for=' + this.axisId + '] text')
-                .attr('text-anchor', anchor)
-                .style('text-anchor', anchor)
-                .text(this.displayedTitle)
-                .attr('transform','rotate(' + r + ')');
+            this.svg.select('g.title-group[for=' + this.axisId + ']')
+              .attr('transform','translate(' + x + ',' + y + ')');
+            this.svg.select('g.title-group[for=' + this.axisId + '] text')
+              .attr('text-anchor', anchor)
+              .style('text-anchor', anchor)
+              .attr('fill',this.colors[this.axisColor])
+              .attr('font-size', this.titleTypeSize + 'px')
+              .text(this.displayedTitle)
+              .attr('transform','rotate(' + r + ')');
           }
 
           this._processTooltip();
@@ -15168,10 +15469,12 @@ PxVisBehaviorTime.datetime = {
         /**
          * Draws the color bars for each series
          *
-         * @method drawSeriesBars
          */
         drawSeriesBars:function() {
-          if(!this.preventSeriesBar && this._doesObjHaveValues(this.completeSeriesConfig) && this._axisGroup && this.displayedTitle) {
+          if(!this.preventSeriesBar && this._doesObjHaveValues(this.completeSeriesConfig) && this._axisGroup && this._titleGroup) {
+
+            //reset bars...
+            this._titleGroup.selectAll('rect').remove();
 
             // FIXME do we need to move the title group based on how many series we have
             var keys = Object.keys(this.completeSeriesConfig),
@@ -15185,12 +15488,11 @@ PxVisBehaviorTime.datetime = {
         /**
          * Mutes and unmutes the color bars for each series
          *
-         * @method muteSeriesBars
          */
         _muteSeriesBars:function() {
           var keys = Object.keys(this.mutedSeries);
           for(var i = 0; i < keys.length; i++) {
-            var series = this._titleGroup.select('[series-bar-id=bar_' + keys[i] + ']');
+            var series = this._titleGroup.select('[series-bar-id=bar_' + this._escapeCssSelector(keys[i]) + ']');
             // if we want to mute it
             if(this.mutedSeries[keys[i]]) {
               series.attr('opacity',0.5);
@@ -15202,7 +15504,6 @@ PxVisBehaviorTime.datetime = {
         /**
          * Helper function to draw the series color bar
          *
-         * @method drawSeriesBars
          */
         _drawBar:function(elem,sid,color,index) {
           var w = elem.select('.axis-title').node().getBoundingClientRect()['height'];
@@ -15213,6 +15514,11 @@ PxVisBehaviorTime.datetime = {
             .attr('series-bar-id','bar_' + sid)
             .attr('transform','translate(-12,' + (-3 -w - 8 * index) + ')');
         },
+
+        /**
+         * Helper function to append units to the title
+         *
+         */
         _computeUnits: function(appendUnitInTitle, completeSeriesConfig, title) {
           var result = '';
 
@@ -15223,6 +15529,7 @@ PxVisBehaviorTime.datetime = {
 
           return result;
         },
+
         /**
          * truncates the title label appropriately
          */
@@ -15242,6 +15549,10 @@ PxVisBehaviorTime.datetime = {
               }
            }, 5);
         },
+
+        /**
+         * redraws title on change
+         */
         _titleChanged: function(displayedTitle) {
           this.debounce('drawTitle', function() {
             if(this._doesObjHaveValues(this._axisGroup) && this._axisGroup.node() !== null && this._axisGroup.node().ownerSVGElement !== null) {
@@ -15250,6 +15561,7 @@ PxVisBehaviorTime.datetime = {
             }
           }.bind(this), 5);
         },
+        
         /**
          * checks it the label needs a tooltip an appropriately add or remove it
          */
@@ -15350,7 +15662,10 @@ PxVisBehaviorTime.datetime = {
             type: Array,
             value:function() { return [0,0]; }
           },
-
+          /**
+           * Boolean to control if the grid should be drawn.
+           *
+           */
           _drawGrid:  {
             type: Boolean,
             value: true
@@ -15509,6 +15824,7 @@ PxVisBehaviorTime.datetime = {
       PxVisBehaviorD3.axis,
       PxVisBehaviorD3.selectedDomain,
       PxVisBehavior.commonMethods,
+      PxVisBehaviorD3.domainUpdate,
       commonColors
     ],
 
@@ -15524,8 +15840,6 @@ PxVisBehaviorTime.datetime = {
        *
        * We cant use the normal svg container due to drawing order. The purpose of this clone is to ensure the brush elements are drawn on top of the navigator chart rather than following normal draw order.
        *
-       * @property brushSvg
-       * @type Object
        */
       brushSvg:{
         type: Object,
@@ -15536,8 +15850,6 @@ PxVisBehaviorTime.datetime = {
        *
        * See: https://github.com/mbostock/d3/wiki/SVG-Controls
        *
-       * @property _brush
-       * @type Object
        */
       _brush:{
         type: Object,
@@ -15546,8 +15858,6 @@ PxVisBehaviorTime.datetime = {
       /**
        * Holder for a SVG group of elements pertaining to the brush
        *
-       * @property _brushGroup
-       * @type Object
        */
       _brushGroup:{
         type: Object,
@@ -15556,8 +15866,6 @@ PxVisBehaviorTime.datetime = {
       /**
        * Holder for a SVG group of elements pertaining to the handles
        *
-       * @property _handleGroup
-       * @type Object
        */
       _handleGroup:{
         type: Object,
@@ -15566,8 +15874,6 @@ PxVisBehaviorTime.datetime = {
       /**
        * Holder for a calculated center of the extent box
        *
-       * @property _center
-       * @type Object
        */
       _center:{
         type:Object,
@@ -15576,8 +15882,6 @@ PxVisBehaviorTime.datetime = {
       /**
        * A boolean to tell if the extents box is currently moving
        *
-       * @property _centering
-       * @type Object
        */
       _centering:{
         type:Boolean,
@@ -15617,12 +15921,14 @@ PxVisBehaviorTime.datetime = {
     },
 
     observers: [
-      'drawElement(currentDomain,svg,axis,height, selectedDomain)',
+      'drawElement(domainChanged, svg,axis,height, selectedDomain, currentDomain)',
       '_zoomBrush(chartDomain.*)'
     ],
+
     detached: function() {
       this.unlisten(window,'mouseup','_brushMouseUp');
     },
+
     /**
      * Defines the svg for the brush, draws brush elements, and sets up listeners.
      *
@@ -15639,6 +15945,12 @@ PxVisBehaviorTime.datetime = {
               [this.axis(this.currentDomain[0]),0],
               [this.axis(this.currentDomain[1]),h]
             ];
+
+        // check that our sizing is ok and wont freak d3 out.
+        // x2 and y2 must be greater than x1 & y1
+        domain[1][0] = (domain[1][0] > domain[0][0]) ? domain[1][0] : domain[0][0];
+        domain[1][1] = (domain[1][1] > domain[0][1]) ? domain[1][1] : domain[0][1];
+
       if(this._isObjEmpty(this._brush)) {
 
         // make sure the brush draws on top of everything; returns a set property brushSvg
@@ -16041,6 +16353,10 @@ PxVisBehaviorTime.datetime = {
         type: Array,
         value: function(){ return [[],[]] }
       },
+      /**
+       * Bolean to detect if the chart data has changed
+       *
+       */
       _chartDataHasChanged: {
         type: Boolean,
         value: false
@@ -16331,27 +16647,27 @@ PxVisBehaviorTime.datetime = {
       <style include="px-vis-styles"></style>
       <style include="px-theme-styles"></style>
       <div id="wrapper" style="height:100%;width:100%">
-        <px-vis-scale svg="[[svg]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" width="[[width]]" height="[[height]]" margin="[[margin]]" chart-extents="[[chartExtents]]" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]">
+        <px-vis-scale svg="[[svg]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" width="[[width]]" height="[[height]]" margin="[[margin]]" x="{{x}}" y="{{y}}" chart-extents="[[chartExtents]]" complete-series-config="[[completeSeriesConfig]]" chart-data="[[chartData]]" domain-changed="{{domainChanged}}" current-domain-x="{{currentDomainX}}" current-domain-y="{{currentDomainY}}">
         </px-vis-scale>
-        <px-vis-svg width="[[width]]" height="[[height]]" margin="[[margin]]">
+        <px-vis-svg width="[[width]]" height="[[height]]" margin="[[margin]]" svg="{{svg}}" px-svg-elem="{{pxSvgElem}}">
         </px-vis-svg>
 
-        <template is="dom-repeat" items="[[_returnKeys(completeSeriesConfig)]]">
+        <template is="dom-repeat" items="[[_seriesKeys)]]">
           <template is="dom-if" if="[[_limitSeries(index,navSeriesLimit)]]">
             <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]">
-              <px-vis-line svg="[[svg]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" domain-changed="[[domainChanged]]" muted-series="[[mutedSeries]]">
+              <px-vis-line svg="[[svg]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" domain-changed="[[domainChanged]]" muted-series="[[mutedSeries]]">
               </px-vis-line>
             </template>
             <template is="dom-if" if="[[_chartTypeScatter(item,completeSeriesConfig)]]">
-              <px-vis-scatter svg="[[svg]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" marker-size="2" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" muted-series="[[mutedSeries]]">
+              <px-vis-scatter svg="[[svg]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" marker-size="2" x="[[x]]" y="[[y]]" domain-changed="[[domainChanged]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" muted-series="[[mutedSeries]]">
               </px-vis-scatter>
             </template>
           </template>
         </template>
 
-        <px-vis-axis svg="[[svg]]" axis="[[x]]" axis-id="x" height="[[height]]" margin="[[margin]]" orientation="bottom" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
+        <px-vis-axis svg="[[svg]]" axis="[[x]]" axis-id="x" height="[[height]]" width="[[width]]" margin="[[margin]]" orientation="bottom" complete-series-config="[[completeSeriesConfig]]" domain-changed="[[domainChanged]]" current-domain="[[currentDomainX]]">
         </px-vis-axis>
-        <px-vis-brush svg="[[svg]]" axis="[[x]]" height="[[height]]" width="[[width]]" margin="[[margin]]" current-domain="[[currentDomainX]]" chart-domain="[[chartDomainX]]" selected-domain="[[selectedDomain]]" gradient-overlay="[[gradientOverlay]]">
+        <px-vis-brush svg="[[svg]]" axis="[[x]]" height="[[height]]" width="[[width]]" margin="[[margin]]" current-domain="[[currentDomainX]]" chart-domain="[[chartDomainX]]" selected-domain="{{selectedDomain}}" gradient-overlay="[[gradientOverlay]]">
         </px-vis-brush>
       </div>
     </template>
@@ -16375,7 +16691,6 @@ PxVisBehaviorTime.datetime = {
           PxVisBehavior.commonMethods,
           PxVisBehavior.axisTypes,
           PxVisBehaviorChart.chartCommon,
-          PxVisBehaviorChart.precipitationPattern,
           Polymer.IronResizableBehavior,
           PxVisBehaviorChart.saveImage,
           PxVisBehaviorChart.chartAutoResize,
@@ -16398,17 +16713,7 @@ PxVisBehaviorTime.datetime = {
             value: Infinity,
             notify: true
           },
-          xAxisLocation:{
-            type:String,
-            value:'bottom'
-          },
-          yAxisLocation:{
-            type:String,
-            value:'left'
-          },
-          margin:{
-            type:Object
-          },
+
           /**
            * The parent chart's extents
            *
@@ -16452,22 +16757,27 @@ PxVisBehaviorTime.datetime = {
           },
           /**
            * Boolean specifying if the navigator should be allowed to render empty or not
-           *
            */
           disableEmptyRender: {
             type: Boolean,
             value: false
           },
         },
+
         listeners: {
           'iron-resize': '_onIronResize'
         },
+
         attached: function() {
           this._onIronResize();
         },
-        _limitSeries: function(i){
+        /**
+         * Dom if function to decide if a repeated item is above our limit
+         */
+        _limitSeries: function(i) {
           return i < this.navSeriesLimit;
         },
+
         /**
          * Forces the chart to resize and redraw
          */
@@ -16488,6 +16798,10 @@ PxVisBehaviorTime.datetime = {
             }
           },100);
         },
+
+        /**
+         * When a range from rangepicker changes
+         */
         _rangeChanged: function() {
           var newXRange = [Px.moment(this.range.from),Px.moment(this.range.to)];
 
@@ -16534,6 +16848,10 @@ PxVisBehaviorTime.datetime = {
             this.set('selectedDomain', newDomain);
           }
         },
+
+        /**
+         * Creates some dummy data for iniitial use
+         */
         _updateDummyData: function(newXRange) {
           var config = this.seriesConfig[Object.keys(this.seriesConfig)[0]],
             newData1 = {},
@@ -16596,8 +16914,6 @@ PxVisBehaviorTime.datetime = {
       /**
        * Holder for the interaction rectangle object
        *
-       * @property _rect
-       * @type Object
        */
       _rect:{
         type:Object
@@ -16605,13 +16921,16 @@ PxVisBehaviorTime.datetime = {
       /**
        * an object that contains meta data for the area drawn by the user
        *
-       * @property _actionArea
-       * @type Object
        */
       _actionArea: {
         type: Object,
         value: function() {return {};}
       },
+
+      /**
+       * The actual mouse svg rect which can be used to activate tooltip
+       *
+       */
       mouseRect: {
         type: Object,
         notify: true
@@ -16676,8 +16995,8 @@ PxVisBehaviorTime.datetime = {
           this.set("mouseRect", this._rect.node());
           this.fire('px-vis-mouse-rect-updated', {'data': this.mouseRect, 'dataVar': 'mouseRect', 'method': 'set'});
       } else {
-        this._rect.attr("width", this.width - this.margin.left - this.margin.right)
-        .attr("height", this.height - this.margin.bottom - this.margin.top);
+        this._rect.attr("width", Math.max(0, this.width - this.margin.left - this.margin.right))
+        .attr("height", Math.max(0, this.height - this.margin.bottom - this.margin.top));
       }
 
       // TODO touchevents
@@ -16851,6 +17170,7 @@ PxVisBehaviorTime.datetime = {
 
             dataObj['xArr'] = xArr;
             dataObj['yArr'] = yArr;
+
             // now we can set our data that we want to pass out
             this.set('tooltipData',dataObj);
             this.fire('px-vis-tooltip-updated', { 'dataVar': 'tooltipData', 'data': dataObj, 'method':'set' });
@@ -17266,23 +17586,30 @@ PxVisBehaviorTime.datetime = {
 
       }
 
-      // if we have multi-series then we need multiple circles...
-      if(this.circlePoint === 'yes' && !this._circles){
+      if(this.circlePoint === 'yes'){
         // append the circle
-        this._circles = this._cursor.selectAll('cirlcle.tooltipPoint')
-          .data(Object.keys(this.completeSeriesConfig))
+        this._circles = this._cursor.selectAll('circle.tooltipPoint')
+          .data(Object.keys(this.completeSeriesConfig));
+
+        this._circles.exit().remove();
+
+        this._circles
           .enter()
-          .append('circle')
-          .attr('class', 'tooltipPoint')
-          .attr('fill', (function(d){
-            return this.completeSeriesConfig[d]['color']
-          }).bind(this))
-          .attr('r', 3)
-          .attr('stroke', (function(d){
-            return this.completeSeriesConfig[d]['color']
-          }).bind(this))
-          .attr('stroke-width', 12)
-          .attr('stroke-opacity', 0.3);
+            .append('circle')
+            .attr('class', 'tooltipPoint')
+            .attr('r', 3)
+            .attr('stroke-width', 12)
+            .attr('stroke-opacity', 0.3)
+          .merge(this._circles)
+            .attr('fill', (function(d){
+              return this.completeSeriesConfig[d]['color']
+            }).bind(this))
+            .attr('stroke', (function(d){
+              return this.completeSeriesConfig[d]['color']
+            }).bind(this));
+          
+          this._circles = this._cursor.selectAll('circle.tooltipPoint');
+          
       }
     },  //drawElement
     /**
@@ -17403,7 +17730,7 @@ var PxVisBehaviorRegister = PxVisBehaviorRegister || {};
 
 /*
     Name:
-    PxVisBehavior.itemShared
+    PxVisBehaviorRegister.itemShared
 
     Description:
     Polymer behavior that provides the basic properties and methods for px-vis register items.
@@ -17411,25 +17738,40 @@ var PxVisBehaviorRegister = PxVisBehaviorRegister || {};
     Dependencies:
     - none
 
-    @polymerBehavior PxVisBehavior.itemShared
+    @polymerBehavior PxVisBehaviorRegister.itemShared
 */
 PxVisBehaviorRegister.itemShared = {
   properties: {
+    /**
+     * A holder for a line of the register
+     */
     item: {
       type: Object
     },
+    /**
+     * Which flex classes get applied to make it side or top
+     */
     _wrapperClass: {
       type: String,
       computed: '_getWrapperClass(item, completeSeriesConfig)'
     },
+    /**
+     * The name of the item
+     */
     _configName: {
       type: String,
       computed: '_computeConfigName(item, completeSeriesConfig)'
     },
+    /**
+     * the truncated name for the item
+     */
     _truncatedName: {
       type: String,
       computed: '_computeTruncatedName(_configName, completeSeriesConfig)'
     },
+    /**
+     * Whether truncation ran or not
+     */
     _didTruncate: {
       type: Boolean,
       computed: '_computeDidTruncate(_configName, completeSeriesConfig)'
@@ -17440,9 +17782,6 @@ PxVisBehaviorRegister.itemShared = {
      *  - `vertical`
      *  - `horizontal`
      *
-     * @property type
-     * @type string
-     * @default vertical
     */
     type: {
      type: String,
@@ -17451,6 +17790,9 @@ PxVisBehaviorRegister.itemShared = {
     }
   },
 
+  /**
+   * Returns the correct flex type based on the register type
+   */
   _getWrapperClass: function() {
     var classList = 'flex ';
     if(this.type === 'horizontal') {
@@ -17461,15 +17803,21 @@ PxVisBehaviorRegister.itemShared = {
     return classList;
   },
 
+  /**
+   * Returns the name of the item
+   */
   _computeConfigName: function() {
     return this._getConfigName(this.item.name);
   },
+  /**
+   * returns the truncated name of the item
+   */
   _computeTruncatedName: function(_configName) {
     return this._truncateName(_configName, this.truncationLength);
   },
 
   /**
-   * dom-if function for series names to decide if it was truncated. If so, add a tooltip showing full name
+   * decide if series name was truncated. If so, add a tooltip showing full name
    *
    */
   _computeDidTruncate: function(str,len) {
@@ -17477,20 +17825,21 @@ PxVisBehaviorRegister.itemShared = {
     return len > 2 && str.length > len ? true : false;
   },
 
+  /**
+   * Tries to draw the SVG to canvas and if that doesnt work, falls back on a failure callback
+   */
   _getConfigName: function(name) {
-    if(this.xAxisType === 'pie') {
-      return this.item.y;
-    } else {
-      return this.completeSeriesConfig[this.item.name]['name'];
+    if(this.completeSeriesConfig[this.item.name]) {
+      if(this.xAxisType === 'pie') {
+        return this.item.y;
+      } else {
+        return this.completeSeriesConfig[this.item.name]['name'];
+      }
     }
   },
 
   /**
    * helper function to set initial classes
-   *
-   * Adds or removes muted class to those series in the register and sets base classes.
-   *
-   * @method _mutedToStart
    */
   _baseClasses: function() {
     var baseClasses = (this.type === 'horizontal') ? "series narrow flex flex--row" : "series wide flex flex--row";
@@ -17500,7 +17849,7 @@ PxVisBehaviorRegister.itemShared = {
 
 /*
     Name:
-    PxVisBehavior.register
+    PxVisBehaviorRegister.register
 
     Description:
     Polymer behavior that provides the basic properties and methods for px-vis register.
@@ -17508,19 +17857,13 @@ PxVisBehaviorRegister.itemShared = {
     Dependencies:
     - none
 
-    @polymerBehavior PxVisBehavior.register
+    @polymerBehavior PxVisBehaviorRegister.register
 */
 PxVisBehaviorRegister.register = {
-  properties: {
-    /**
-     * For pie charts whether the values should be displayed in %
-     */
-    usePercentage: {
-      type: Boolean,
-      value: false
-    }
-  },
-
+  properties: {},
+  /**
+   * returns the correct classes for the series based on type
+   */
   _getSeriesWrapperClass: function(type) {
     var classList = 'flex ';
 
@@ -17533,6 +17876,9 @@ PxVisBehaviorRegister.register = {
     return classList;
   },
 
+  /**
+   * tests if an item is of a type
+   */
   _isOfType: function(toTest, type) {
     return toTest === type;
   }
@@ -17540,7 +17886,7 @@ PxVisBehaviorRegister.register = {
 
 /*
     Name:
-    PxVisBehavior.pie
+    PxVisBehaviorRegister.pie
 
     Description:
     Polymer behavior that provides the basic properties and methods for px-vis register.
@@ -17548,7 +17894,7 @@ PxVisBehaviorRegister.register = {
     Dependencies:
     - none
 
-    @polymerBehavior PxVisBehavior.pie
+    @polymerBehavior PxVisBehaviorRegister.pie
 */
 PxVisBehaviorRegister.pie = {
   properties: {
@@ -17564,7 +17910,7 @@ PxVisBehaviorRegister.pie = {
 
 /*
     Name:
-    PxVisBehavior.datetime
+    PxVisBehaviorRegister.datetime
 
     Description:
     Polymer behavior that provides the basic properties and methods for px-vis register.
@@ -17572,7 +17918,7 @@ PxVisBehaviorRegister.pie = {
     Dependencies:
     - none
 
-    @polymerBehavior PxVisBehavior.datetime
+    @polymerBehavior PxVisBehaviorRegister.datetime
 */
 PxVisBehaviorRegister.datetime = {
   properties: {
@@ -17612,7 +17958,7 @@ PxVisBehaviorRegister.datetime = {
 
 /*
     Name:
-    PxVisBehavior.muteableItem
+    PxVisBehaviorRegister.generalItem
 
     Description:
     Polymer behavior that provides the muting properties.
@@ -17620,50 +17966,31 @@ PxVisBehaviorRegister.datetime = {
     Dependencies:
     - none
 
-    @polymerBehavior PxVisBehavior.muteableItem
+    @polymerBehavior PxVisBehaviorRegister.generalItem
 */
-PxVisBehaviorRegister.nonPieItem = {
+PxVisBehaviorRegister.generalItem = [{
   properties: {
-    _xUnit: {
-      type: String,
-      computed: '_computeXUnit(item, completeSeriesConfig.*)'
-    },
-    _yUnit: {
-      type: String,
-      computed: '_computeYUnit(item, completeSeriesConfig.*)'
-    },
+    /**
+     * Decides if the item starts off muted
+     */
     _itemMutedToStart: {
       type: String,
-      computed: '_computeItemMutedToStart(item, completeSeriesConfig)'
+      computed: '_computeItemMutedToStart(item, completeSeriesConfig.*)'
     },
+    /**
+     * calcates the color of the item
+     */
     _itemColor: {
       type: String,
-      computed: '_computeItemColor(item, completeSeriesConfig)'
-    },
-    _itemX: {
-      type: String,
-      computed: '_computeItemX(item, completeSeriesConfig)'
-    },
-    _itemY: {
-      type: String,
-      computed: '_computeItemY(item, completeSeriesConfig)'
+      computed: '_computeItemColor(item, completeSeriesConfig.*)'
     },
   },
 
-  _computeXUnit : function(item, completeSeriesConfig) {
-    return this.completeSeriesConfig[item.name]['xAxisUnit'] ? this.completeSeriesConfig[item.name]['xAxisUnit'] : '';
-  },
-  _computeYUnit : function(item, completeSeriesConfig) {
-    return this.completeSeriesConfig[item.name]['yAxisUnit'] ? this.completeSeriesConfig[item.name]['yAxisUnit'] : '';
-  },
+  /**
+   * returns if the series should be muted to start
+   */
   _computeItemMutedToStart: function() {
     return this._mutedToStart(this.item.name);
-  },
-  _computeItemY: function() {
-    return this._returnVal(this.item, 'y', '&nbsp;/&nbsp');
-  },
-  _computeItemX: function() {
-    return this._returnVal(this.item, 'x', '&nbsp;/&nbsp');
   },
 
   /**
@@ -17678,7 +18005,7 @@ PxVisBehaviorRegister.nonPieItem = {
    * @return {rgb}
    */
   _computeItemColor: function() {
-    return this.completeSeriesConfig[this.item.name]['color'];
+    return this.completeSeriesConfig[this.item.name] ? this.completeSeriesConfig[this.item.name]['color'] : '';
   },
 
   /**
@@ -17697,19 +18024,6 @@ PxVisBehaviorRegister.nonPieItem = {
     return classes;
   },
 
-  _returnVal: function(item, axis, separator) {
-    var key = (axis === 'x') ? this.completeSeriesConfig[item.name]['x'] : this.completeSeriesConfig[item.name]['y'];
-
-    if(item.value && (item.value[key] || item.value[key] === 0)) {
-      return item.value[key] + (separator ? separator : '');
-    }
-    return null;
-  },
-
-  _getYUnit: function(item, completeSeriesConfig) {
-    return this.completeSeriesConfig[item.name] && this.completeSeriesConfig[item.name].yAxisUnit ? this.completeSeriesConfig[item.name].yAxisUnit : '';
-  },
-
   /**
    * Event function which is fired when a series is clicked.
    *
@@ -17721,18 +18035,8 @@ PxVisBehaviorRegister.nonPieItem = {
   _seriesClicked: function(e) {
     var ne = Polymer.dom(e),
         series = ne.rootTarget.getAttribute('name').substr(1);
-    // if it doesnt exist, let's add it and set to true
-    if( typeof(this.mutedSeries[series]) === 'undefined' ) {
-      this.set('mutedSeries.' + series, true);
-    } else {
-      //if does exist, flip the bit
-      this.set('mutedSeries.' + series, !this.mutedSeries[series]);
-    }
-    this.fire('px-vis-muted-series-updated',
-      { 'data': this.mutedSeries[series],
-        'dataVar': ('mutedSeries.'+series),
-        'method': 'set'
-      });
+
+    this.muteUnmuteSeries(series);
     e.stopPropagation();
   },
 
@@ -17749,7 +18053,7 @@ PxVisBehaviorRegister.nonPieItem = {
       this.toggleClass('muted', this.mutedSeries[item.name], this.$$.regItem);
     }
   }
-};
+}, PxVisBehavior.muteUnmuteSeries];
 
 
 </script>
@@ -17835,15 +18139,83 @@ PxVisBehaviorRegister.nonPieItem = {
       PxVisBehavior.axisTypes,
       PxVisBehaviorRegister.register,
       PxVisBehaviorRegister.itemShared,
-      PxVisBehaviorRegister.nonPieItem,
+      PxVisBehaviorRegister.generalItem,
       commonColors
     ],
     properties: {
-
+      /**
+       * the units for the x value
+       */
+      _xUnit: {
+        type: String,
+        computed: '_computeXUnit(item, completeSeriesConfig.*)'
+      },
+      /**
+       * the units for the y value
+       */
+      _yUnit: {
+        type: String,
+        computed: '_computeYUnit(item, completeSeriesConfig.*)'
+      },
+      /**
+       * calcs the value for x
+       */
+      _itemX: {
+        type: String,
+        computed: '_computeItemX(item, completeSeriesConfig.*)'
+      },
+      /**
+       * calcs the value of y
+       */
+      _itemY: {
+        type: String,
+        computed: '_computeItemY(item, completeSeriesConfig.*)'
+      }
     },
+
     observers: [
       '_toggleSeries(item,mutedSeries.*)'
     ],
+
+    /**
+     * returns the unit for the x value based on the seriesConfig
+     */
+    _computeXUnit : function(item, completeSeriesConfig) {
+      return this.completeSeriesConfig[item.name] && this.completeSeriesConfig[item.name]['xAxisUnit'] ? this.completeSeriesConfig[item.name]['xAxisUnit'] : '';
+    },
+    /**
+     * returns the unit for the y value based on the seriesConfig
+     */
+    _computeYUnit : function(item, completeSeriesConfig) {
+      return this.completeSeriesConfig[item.name] && this.completeSeriesConfig[item.name]['yAxisUnit'] ? this.completeSeriesConfig[item.name]['yAxisUnit'] : '';
+    },
+
+    /**
+     * returns the value for y
+     */
+    _computeItemY: function() {
+      return this._returnVal(this.item, 'y', '&nbsp;/&nbsp');
+    },
+    /**
+     * returns the value for x
+     */
+    _computeItemX: function() {
+      return this._returnVal(this.item, 'x', '&nbsp;/&nbsp');
+    },
+
+    /**
+     * returns the value in the tooltip data
+     */
+    _returnVal: function(item, axis, separator) {
+      if(this.completeSeriesConfig[item.name]) {
+        var key = (axis === 'x') ? this.completeSeriesConfig[item.name]['x'] : this.completeSeriesConfig[item.name]['y'];
+
+        if(item.value && (item.value[key] || item.value[key] === 0)) {
+          return item.value[key] + (separator ? separator : '');
+        }
+      }
+      return null;
+    },
 
   });
 </script>
@@ -17894,11 +18266,19 @@ PxVisBehaviorRegister.nonPieItem = {
     ],
 
     properties: {
+      /**
+       * the passed in index from the dom repeat
+       *
+       */
       itemIndex: {
         type: Number
       }
     },
 
+    /**
+     * returns the value of the pie slice
+     *
+     */
     _returnPieVal: function(item, axis, separator, usePercentage) {
       //pie should have only one config bit.
       var key = Object.keys(this.completeSeriesConfig)[0],
@@ -17910,14 +18290,20 @@ PxVisBehaviorRegister.nonPieItem = {
       }
       return null;
     },
-
+    /**
+     * returns the units for the pie slice
+     *
+     */
     _getPieUnit: function(usePercentage) {
       //pie should have only one config bit.
       var key = Object.keys(this.completeSeriesConfig)[0];
       var unit = this.completeSeriesConfig[key].xAxisUnit;
       return usePercentage ? '%' : unit;
     },
-
+    /**
+     * retirns the color for the pie slice
+     *
+     */
     _getPieBackColor: function(item, index) {
       return item.backgroundColor ? item.backgroundColor : this._getPieColorForIndex(index);
     },
@@ -18671,7 +19057,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       <div class$="{{_getSeriesWrapperClass(type)}}">
         <template is="dom-if" if="{{!_isOfType(xAxisType, 'pie')}}">
           <template is="dom-repeat" items="{{_series}}">
-            <px-vis-register-item item="[[item]]" complete-series-config="[[completeSeriesConfig]]" type="[[type]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" muted-series="{{mutedSeries}}">
+            <px-vis-register-item item="[[item]]" complete-series-config="[[completeSeriesConfig]]" type="[[type]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" muted-series="{{mutedSeries}}" number-format="[[numberFormat]]" number-format-culture="[[numberFormatCulture]]" number-format-is-currency$="[[numberFormatIsCurrency]]" number-format-currency="[[numberFormatCurrency]]" number-format-zero="[[numberFormatZero]]">
             </px-vis-register-item>
           </template>
         </template>
@@ -18720,26 +19106,27 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
        *  - `vertical`
        *  - `horizontal`
        *
-       * @property type
-       * @type string
-       * @default vertical
       */
       type:{
        type:String,
        value:"vertical",
        notify: true
       },
-
+      /**
+       * List of the series to add to the register
+       *
+      */
       _series: {
         type: Array,
-        computed: '_computeSeries(tooltipData)'
+        notify: true,
+        computed: '_computeSeries(tooltipData.series.*)'
       },
 
 
     },
 
     observers: [
-      '_formatDateTime(tooltipData.*)'
+      '_formatDateTime(tooltipData.*)',
      ],
 
     /**
@@ -18786,7 +19173,10 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
         this.set('_separator', '');
       }
     },
-
+    /**
+     * returns the list of series
+     *
+    */
     _computeSeries: function() {
       return this.tooltipData.series;
     }
@@ -18805,7 +19195,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     <style include="px-vis-tooltip-styles"></style>
     <style include="px-theme-styles"></style>
     <px-tooltip id="tooltip" tooltip-style="[[tooltipStyle]]" for="[[hoverTarget]]" delay="50" orientation="[[orientation]]" follow-mouse="" mouse-coords="[[mousePosition]]">
-        <px-vis-register id="register" truncation-length="100" force-date-time-display="[[forceDateTimeDisplay]]" tooltip-data="[[tooltipData]]" chart-data="[[chartData]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" complete-series-config="[[completeSeriesConfig]]">
+        <px-vis-register id="register" truncation-length="100" force-date-time-display="[[forceDateTimeDisplay]]" tooltip-data="[[tooltipData]]" chart-data="[[chartData]]" x-axis-type="[[xAxisType]]" y-axis-type="[[yAxisType]]" complete-series-config="[[completeSeriesConfig]]" muted-series="[[mutedSeries]]" number-format="[[numberFormat]]" number-format-culture="[[numberFormatCulture]]" number-format-is-currency$="[[numberFormatIsCurrency]]" number-format-currency="[[numberFormatCurrency]]" number-format-zero="[[numberFormatZero]]" first-date-time-format"[[firstdatetimeformat]]"="" second-date-time-format"[[seconddatetimeformat]]"="" separator="[[separator]]" timezone="[[timezone]]">
         </px-vis-register>
 
     </px-tooltip>
@@ -18822,6 +19212,9 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       PxVisBehavior.tooltipData,
       PxVisBehavior.axisTypes,
       PxVisBehavior.completeSeriesConfig,
+      PxVisBehavior.mutedSeries,
+      PxVisBehavior.formatting,
+      PxVisBehaviorTime.datetime,
       commonColors
     ],
 
@@ -18832,19 +19225,41 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
      * @type Object
      */
     properties: {
+      /**
+       * The dom element over which the tooltip should be shown. Generally some <g> or <rect> element on the svg
+       *
+       */
       hoverTarget: {
         type: Object
       },
+      /**
+       * x,y screen position where you want the tooltip to be displayed. Can be the mouse position; can also be any arbitraty screen position.
+       *
+       */
       mousePosition:{
         type: Array
       },
+      /**
+       * Tooltip style supports two values:
+       * - `light` : gives tooltip a white background
+       * - `dark`  : gives tooltip a balck backgound. Default
+       *
+       */
       tooltipStyle: {
         type: String,
         value: "dark"
       },
+      /**
+       * The actual px-tooltip elem in case we need access to it higher up the dom.
+       *
+       */
       tooltipElem: {
         type: Object
       },
+      /**
+       * Orientation for the tooltip
+       *
+       */
       orientation: {
         type: String,
         value: "auto"
@@ -18861,6 +19276,10 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
 
     ready: function() {
       this.set('tooltipElem', this.$.tooltip);
+    },
+
+    detached: function(){
+      this.tooltipElem.remove();
     }
   });
 </script>
@@ -19114,12 +19533,14 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
      * @property properties
      * @type Object
      */
-    properties: {
-
-    },
+    properties: {},
     observers: [
       'zooooom(extentsData)'
     ],
+    /**
+     * Sets the selectedDomain to the drawn zoom and shows the button
+     *
+     */
     zooooom: function(extentsData) {
       //make sure the button is visible so we can measure it
       this.toggleClass('hidden', false, this.$.resetBtn);
@@ -19133,6 +19554,10 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
       this.fire('px-vis-selected-domain-updated', { 'data':{x:extentsData.eX, y:extentsData.eY}, 'method': 'set', 'dataVar': 'selectedDomain' });
 
     },
+    /**
+     * resets the extents
+     *
+     */
     resetZoom: function(){
       this.set('selectedDomain', 'reset');
       this.fire('px-vis-selected-domain-updated', { 'data':'reset', 'method': 'set', 'dataVar': 'selectedDomain' });
@@ -19174,9 +19599,15 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
      * @type Object
      */
     properties: {
+      /**
+       * Holder for the bigger clip path intended for other chart objects such as events
+       */
       _clipPathSvg: {
         type: Object
       },
+      /**
+       * holder for smaller clip path intended for the chart series
+       */
       _seriesClipPathSvg: {
         type: Object
       },
@@ -19194,13 +19625,13 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     ],
 
     /**
-     * Creates and sets a clipping path
+     * Creates and sets two clipping paths.
      *
      * @method _drawElement
      */
     _drawElement: function() {
 
-
+      //if the clip path has not been set, create it
       if(!this._clipPathSvg) {
 
         this.set('clipPath', this.generateRandomID('cp_'));
@@ -19213,11 +19644,13 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
 
         this._clipPathSvg = this.svg.select('clipPath#'+this.clipPath+' rect');
       }
+      //update the clip path
       this._clipPathSvg
         .attr('y',-this.margin.top)
         .attr('width', Math.max(this.width - this.margin.left, 0))
         .attr('height', Math.max(this.height - this.margin.bottom, 0));
 
+      //if the second clip path has not been set, create it
       if(!this._seriesClipPathSvg) {
 
         this.set('seriesClipPath', this.generateRandomID('cps_'));
@@ -19230,10 +19663,11 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
 
         this._seriesClipPathSvg = this.svg.select('clipPath#'+this.seriesClipPath + ' rect');
       }
+      //update the second clip path
       this._seriesClipPathSvg
         .attr('y', this.seriesClipPathYOffset)
         .attr('width', Math.max(this.width - this.margin.left - this.margin.right,0))
-        .attr('height', Math.max(this.height - this.margin.bottom  - 
+        .attr('height', Math.max(this.height - this.margin.bottom  -
                         this.margin.top - this.seriesClipPathYOffset,0));
 
     }
@@ -19282,7 +19716,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     <px-vis-clip-path svg="[[svg]]" x="[[x]]" y="[[y]]" width="[[width]]" height="[[height]]" margin="[[margin]]">
     </px-vis-clip-path>
 
-    <template is="dom-repeat" items="[[_returnKeys(completeSeriesConfig)]]">
+    <template is="dom-repeat" items="[[_seriesKeys]]">
       <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]">
         <template is="dom-if" if="[[renderToCanvas]]">
           <px-vis-line-canvas id="lineCanvas" canvas-context="[[canvasContext]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" domain-changed="[[domainChanged]]" muted-series="[[mutedSeries]]" no-canvas-progressive-rendering="[[noCanvasProgressiveRendering]]" width="[[width]]" height="[[height]]" margin="[[margin]]" clip-path="">
@@ -26704,7 +27138,7 @@ var pxDatetimeBehavior = [{
 <dom-module id="px-datetime-field-styles" assetpath="../px-datetime-field/css/">
 <template>
 <style>
-@charset "UTF-8";/*! normalize.css v3.0.2 | MIT License | git.io/normalize */html{font-size:.9375em;line-height:1.33333;background-color:#fff;color:#000;overflow-y:scroll;min-height:100%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;text-size-adjust:100%;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;box-sizing:border-box}body,figure{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}address,blockquote,dl,fieldset,figure,h1,h2,h3,h4,h5,h6,hr,ol,p,pre,table,ul{margin-bottom:1rem}li>ol,li>ul{margin-bottom:0}dd,ol,ul{margin-left:2rem}img{max-width:100%;border:0}svg:not(:root){overflow:hidden}hr{box-sizing:content-box;height:0}pre{overflow:auto}*,:after,:before{box-sizing:inherit}a{background-color:transparent}a:link,a:visited{color:#3e87e8}a:hover{color:#3573c5}a:active{color:#2b5ea2}a:active,a:hover{outline:0}.float--right{float:right!important}.float--left{float:left!important}.float--none{float:none!important}.text--left{text-align:left!important}.text--center{text-align:center!important}.proceed,.text--right{text-align:right!important}.full-height{height:100%!important}.informative{cursor:help!important}.muted{opacity:.5!important}.caps{text-transform:uppercase!important}.hidden{display:none!important;visibility:hidden}.a11y,.visuallyhidden{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}.a11y.focusable:active,.a11y.focusable:focus,.visuallyhidden.focusable:active,.visuallyhidden.focusable:focus{position:static;overflow:visible;width:auto;height:auto;margin:0;clip:auto}@media screen and (max-width:44.9375em){.a11y-palm,.visuallyhidden-palm{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (min-width:45em) and (max-width:63.9375em){.a11y-lap,.visuallyhidden-lap{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (min-width:45em){.a11y-lap-and-up,.visuallyhidden-lap-and-up{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (max-width:63.9375em){.a11y-portable,.visuallyhidden-portable{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (min-width:64em){.a11y-desk,.visuallyhidden-desk{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media (-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi),(min-resolution:2dppx){.a11y-retina,.visuallyhidden-retina{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}.invisible{visibility:hidden!important}.flex{display:-webkit-flex;display:-ms-flexbox;display:flex}.inline--flex{display:-webkit-inline-flex;display:-ms-inline-flexbox;display:inline-flex}.flex--row{-webkit-flex-direction:row;-ms-flex-direction:row;flex-direction:row}.flex--row--rev{-webkit-flex-direction:row-reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.flex--col{-webkit-flex-direction:column;-ms-flex-direction:column;flex-direction:column}.flex--col--rev{-webkit-flex-direction:column-reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.flex--nowrap{-webkit-flex-wrap:nowrap;-ms-flex-wrap:nowrap;flex-wrap:nowrap}.flex--wrap{-webkit-flex-wrap:wrap;-ms-flex-wrap:wrap;flex-wrap:wrap}.flex--wrap--rev{-webkit-flex-wrap:wrap-reverse;-ms-flex-wrap:wrap-reverse;flex-wrap:wrap-reverse}.flex--left{-webkit-justify-content:flex-start;-ms-flex-pack:start;justify-content:flex-start}.flex--center{-webkit-justify-content:center;-ms-flex-pack:center;justify-content:center}.flex--right{-webkit-justify-content:flex-end;-ms-flex-pack:end;justify-content:flex-end}.flex--justify{-webkit-justify-content:space-between;-ms-flex-pack:justify;justify-content:space-between}.flex--spaced{-webkit-justify-content:space-around;-ms-flex-pack:distribute;justify-content:space-around}.flex--top{-webkit-align-items:flex-start;-ms-flex-align:start;-ms-grid-row-align:flex-start;align-items:flex-start}.flex--middle{-webkit-align-items:center;-ms-flex-align:center;-ms-grid-row-align:center;align-items:center}.flex--bottom{-webkit-align-items:flex-end;-ms-flex-align:end;-ms-grid-row-align:flex-end;align-items:flex-end}.flex--stretch{-webkit-align-items:stretch;-ms-flex-align:stretch;-ms-grid-row-align:stretch;align-items:stretch}.flex--baseline{-webkit-align-items:baseline;-ms-flex-align:baseline;-ms-grid-row-align:baseline;align-items:baseline}.flex--top--multi{-webkit-align-content:flex-start;-ms-flex-line-pack:start;align-content:flex-start}.flex--middle--multi{-webkit-align-content:center;-ms-flex-line-pack:center;align-content:center}.flex--bottom--multi{-webkit-align-content:flex-end;-ms-flex-line-pack:end;align-content:flex-end}.flex--stretch--multi{-webkit-align-content:stretch;-ms-flex-line-pack:stretch;align-content:stretch}.flex--justify--multi{-webkit-align-content:space-between;-ms-flex-line-pack:justify;align-content:space-between}.flex--spaced--multi{-webkit-align-content:space-around;-ms-flex-line-pack:distribute;align-content:space-around}.flex__item{-webkit-flex:1;-ms-flex:1;flex:1}.flex__item--top{-webkit-align-self:flex-start;-ms-flex-item-align:start;align-self:flex-start}.flex__item--middle{-webkit-align-self:center;-ms-flex-item-align:center;align-self:center}.flex__item--bottom{-webkit-align-self:flex-end;-ms-flex-item-align:end;align-self:flex-end}.flex__item--baseline{-webkit-align-self:baseline;-ms-flex-item-align:baseline;align-self:baseline}.u-1\/2,.u-1\/3{-webkit-flex:none!important}.viewport{width:100%;max-width:80rem;margin-right:auto;margin-left:auto}.viewport--full-height{min-height:100vh}fieldset{margin:0}.form-field,legend{margin-bottom:1.33333rem}fieldset,fieldset legend{border:0;padding:0}legend{font-weight:700}.form-field:last-child{margin-bottom:2.66667rem}label{display:block;margin-bottom:.33333rem;cursor:pointer}.label--inline{display:inline-block;margin-bottom:0;line-height:1}.label--inline+.text-input{margin-left:.66667rem}.text-input,select,textarea{margin:0;border:1px solid #b1b1bc;font:inherit;outline:0;-webkit-appearance:none;-moz-appearance:none}.text-input:disabled,select:disabled,textarea:disabled{cursor:not-allowed}.text-input,textarea{width:100%;padding:0 .66667rem;box-shadow:inset 0 0 0 1px #e4e4ea;background-color:#efeff4;color:#000}.text-input[disabled],.text-input[readonly],textarea[disabled],textarea[readonly]{box-shadow:none}.text-input[readonly],textarea[readonly]{border:1px solid #e4e4ea;background-color:#fff;color:#b1b1bc}.text-input:disabled,textarea:disabled{border:1px solid #e4e4ea;box-shadow:none;background-color:#f7f7fc;color:#b1b1bc}.text-input:focus,textarea:focus{border-color:#0a9ec1;box-shadow:inset 0 0 0 1px #d1d0d8}select,select:active,select:focus,select:hover{box-shadow:0 1px 0 rgba(0,0,0,.1)}.text-input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#b1b1bc}.text-input:-moz-placeholder,textarea:-moz-placeholder{color:#b1b1bc}select{border-radius:3px;padding:0 3em 0 1em;line-height:calc(2em - 2px);height:calc(2em - 2px);cursor:pointer;background-color:#e4e4ea;background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20viewBox%3D%220%200%20658%201024%22%3E%3Cpath%20fill%3D%22%233b3b3f%22%20d%3D%22M614.286%20420.571q0%207.429-5.714%2013.143l-266.286%20266.286q-5.714%205.714-13.143%205.714t-13.143-5.714l-266.286-266.286q-5.714-5.714-5.714-13.143t5.714-13.143l28.571-28.571q5.714-5.714%2013.143-5.714t13.143%205.714l224.571%20224.571%20224.571-224.571q5.714-5.714%2013.143-5.714t13.143%205.714l28.571%2028.571q5.714%205.714%205.714%2013.143z%22%2F%3E%3C%2Fsvg%3E");background-repeat:no-repeat;background-position:calc(100% - .66667rem) 37.5%;color:#3b3b3f}select:focus,select:hover{border:1px solid #9999a3;background-color:#b1b1bc}select:active{border:1px solid #7c7c84;background-color:#9999a3}select:disabled{border:1px solid #d1d0d8;box-shadow:none;background-color:#fff;background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20viewBox%3D%220%200%20658%201024%22%3E%3Cpath%20fill%3D%22%23d1d0d8%22%20d%3D%22M614.286%20420.571q0%207.429-5.714%2013.143l-266.286%20266.286q-5.714%205.714-13.143%205.714t-13.143-5.714l-266.286-266.286q-5.714-5.714-5.714-13.143t5.714-13.143l28.571-28.571q5.714-5.714%2013.143-5.714t13.143%205.714l224.571%20224.571%20224.571-224.571q5.714-5.714%2013.143-5.714t13.143%205.714l28.571%2028.571q5.714%205.714%205.714%2013.143z%22%2F%3E%3C%2Fsvg%3E");color:#d1d0d8}select[multiple]{border:1px solid #b1b1bc;padding:.33333rem;cursor:pointer;background:#f7f7fc}select::-ms-expand{display:none}@-moz-document url-prefix(){select{padding-top:.4em;padding-bottom:.4em}}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){select{padding-top:.4em;padding-bottom:.4em}}.text-input{height:2em;line-height:1}.text-input+[type=checkbox],.text-input+[type=radio]{margin-left:1.33333rem}.text-input+.label--inline{margin-left:.66667rem}.text-input[type=search]{-webkit-appearance:none;padding:0}.text-input::-webkit-input-placeholder{padding-top:1px}.text-input:-moz-placeholder{padding-top:1px}.label--inline [type=cancel],.label--inline+[type=submit],.text-input [type=cancel],.text-input+[type=submit]{margin-left:1.33333rem}textarea{overflow:auto;min-height:calc(120px + .66667rem);padding:.33333rem .66667rem;resize:vertical}[type=checkbox],[type=radio]{margin:0;padding:0;font-size:1.05em;cursor:pointer}[type=checkbox][disabled],[type=checkbox][disabled]+.label--inline,[type=radio][disabled],[type=radio][disabled]+.label--inline{cursor:not-allowed}[type=checkbox]+.label--inline{padding-left:5px}[type=radio]+.label--inline{padding-left:3px}.form-field__help{display:inline-block;margin-top:.33333rem;font-size:1rem;line-height:inherit;color:#7c7c84}:host{/*! Comment to prevent cssmin munging this rule with html above and borking Safari */box-sizing:border-box;--dropdown_content_margin:5px 0px 0px 0px;display:-webkit-inline-flex;display:-ms-inline-flexbox;display:inline-flex}.dt-text-field{margin:0;border:1px solid #b1b1bc;font:inherit;outline:0;padding:.33333rem .66667rem .33333rem .33333rem;box-shadow:inset 0 0 0 1px #e4e4ea;background-color:#efeff4;color:#000}.u-mh,.u-mr{margin-right:1rem!important}.u-mh,.u-ml{margin-left:1rem!important}.u-mt,.u-mv{margin-top:1rem!important}.u-mb,.u-mv{margin-bottom:1rem!important}.dt-is-selected{border-color:#0a9ec1;box-shadow:inset 0 0 0 1px #d1d0d8}.clearfix:after{content:"";display:table;clear:both}.u-m{margin:1rem!important}.u-mh--,.u-mr--{margin-right:.33333rem!important}.u-mh--,.u-ml--{margin-left:.33333rem!important}.u-mt--,.u-mv--{margin-top:.33333rem!important}.u-mb--,.u-mv--{margin-bottom:.33333rem!important}.u-m--{margin:.33333rem!important}.u-mh-,.u-mr-{margin-right:.66667rem!important}.u-mh-,.u-ml-{margin-left:.66667rem!important}.u-mt-,.u-mv-{margin-top:.66667rem!important}.u-mb-,.u-mv-{margin-bottom:.66667rem!important}.u-m-{margin:.66667rem!important}.u-1\/1{width:100%!important}.u-1\/2{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4,.u-2\/3{-webkit-flex:none!important}.u-2\/3{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4,.u-3\/4{-webkit-flex:none!important}.u-2\/4{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6,.u-2\/6{-webkit-flex:none!important}.u-1\/6{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6,.u-4\/6{-webkit-flex:none!important}.u-3\/6{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}@media screen and (max-width:47.9rem){.u-1\/2-palm,.u-1\/3-palm{-webkit-flex:none!important}.u-1\/1-palm{width:100%!important}.u-1\/2-palm{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3-palm{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-palm,.u-2\/3-palm{-webkit-flex:none!important}.u-2\/3-palm{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-palm{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4-palm,.u-3\/4-palm{-webkit-flex:none!important}.u-2\/4-palm{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4-palm{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6-palm,.u-2\/6-palm{-webkit-flex:none!important}.u-1\/6-palm{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6-palm{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6-palm,.u-4\/6-palm{-webkit-flex:none!important}.u-3\/6-palm{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6-palm{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6-palm{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:48rem) and (max-width:63.9rem){.u-1\/2-lap,.u-1\/3-lap{-webkit-flex:none!important}.u-1\/1-lap{width:100%!important}.u-1\/2-lap{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3-lap{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-lap,.u-2\/3-lap{-webkit-flex:none!important}.u-2\/3-lap{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-lap{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4-lap,.u-3\/4-lap{-webkit-flex:none!important}.u-2\/4-lap{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4-lap{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6-lap,.u-2\/6-lap{-webkit-flex:none!important}.u-1\/6-lap{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6-lap{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6-lap,.u-4\/6-lap{-webkit-flex:none!important}.u-3\/6-lap{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6-lap{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6-lap{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:48rem){.u-1\/1-lap-and-up{width:100%!important}.u-1\/2-lap-and-up{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-lap-and-up{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-lap-and-up{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-lap-and-up{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-lap-and-up{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-lap-and-up{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-lap-and-up{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-lap-and-up{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-lap-and-up{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-lap-and-up{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-lap-and-up{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (max-width:63.9rem){.u-1\/1-portable{width:100%!important}.u-1\/2-portable{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-portable{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-portable{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-portable{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-portable{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-portable{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-portable{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-portable{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-portable{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-portable{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-portable{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:63.9rem){.u-1\/2-desk,.u-1\/3-desk{-webkit-flex:none!important}.u-1\/1-desk{width:100%!important}.u-1\/2-desk{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3-desk{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-desk,.u-2\/3-desk{-webkit-flex:none!important}.u-2\/3-desk{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-desk{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4-desk,.u-3\/4-desk{-webkit-flex:none!important}.u-2\/4-desk{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4-desk{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6-desk,.u-2\/6-desk{-webkit-flex:none!important}.u-1\/6-desk{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6-desk{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6-desk,.u-4\/6-desk{-webkit-flex:none!important}.u-3\/6-desk{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6-desk{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6-desk{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:100%){.u-1\/1-desk-wide{width:100%!important}.u-1\/2-desk-wide{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-desk-wide{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-desk-wide{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-desk-wide{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-desk-wide{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-desk-wide{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-desk-wide{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-desk-wide{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-desk-wide{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-desk-wide{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-desk-wide{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media (-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi),(min-resolution:2dppx){.u-1\/1-retina{width:100%!important}.u-1\/2-retina{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-retina{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-retina{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-retina{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-retina{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-retina{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-retina{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-retina{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-retina{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-retina{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-retina{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}.validation-failed,.validation-failed:active{border:1px solid #e53838}
+@charset "UTF-8";/*! normalize.css v3.0.2 | MIT License | git.io/normalize */html{font-size:.9375em;line-height:1.33333;background-color:#fff;color:#000;overflow-y:scroll;min-height:100%;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;text-size-adjust:100%;-moz-osx-font-smoothing:grayscale;-webkit-font-smoothing:antialiased;box-sizing:border-box}body,figure{margin:0}article,aside,details,figcaption,figure,footer,header,hgroup,main,menu,nav,section,summary{display:block}audio,canvas,progress,video{display:inline-block;vertical-align:baseline}audio:not([controls]){display:none;height:0}[hidden],template{display:none}address,blockquote,dl,fieldset,figure,h1,h2,h3,h4,h5,h6,hr,ol,p,pre,table,ul{margin-bottom:1rem}li>ol,li>ul{margin-bottom:0}dd,ol,ul{margin-left:2rem}img{max-width:100%;border:0}svg:not(:root){overflow:hidden}hr{box-sizing:content-box;height:0}pre{overflow:auto}*,:after,:before{box-sizing:inherit}a{background-color:transparent}a:link,a:visited{color:#3e87e8}a:hover{color:#3573c5}a:active{color:#2b5ea2}a:active,a:hover{outline:0}.float--right{float:right!important}.float--left{float:left!important}.float--none{float:none!important}.text--left{text-align:left!important}.text--center{text-align:center!important}.proceed,.text--right{text-align:right!important}.full-height{height:100%!important}.informative{cursor:help!important}.muted{opacity:.5!important}.caps{text-transform:uppercase!important}.hidden{display:none!important;visibility:hidden}.a11y,.visuallyhidden{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}.a11y.focusable:active,.a11y.focusable:focus,.visuallyhidden.focusable:active,.visuallyhidden.focusable:focus{position:static;overflow:visible;width:auto;height:auto;margin:0;clip:auto}@media screen and (max-width:44.9375em){.a11y-palm,.visuallyhidden-palm{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (min-width:45em) and (max-width:63.9375em){.a11y-lap,.visuallyhidden-lap{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (min-width:45em){.a11y-lap-and-up,.visuallyhidden-lap-and-up{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (max-width:63.9375em){.a11y-portable,.visuallyhidden-portable{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media screen and (min-width:64em){.a11y-desk,.visuallyhidden-desk{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}@media (-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi),(min-resolution:2dppx){.a11y-retina,.visuallyhidden-retina{position:absolute!important;overflow:hidden!important;width:1px!important;height:1px!important;margin:-1px!important;border:0!important;padding:0!important;clip:rect(0 0 0 0)!important}}.invisible{visibility:hidden!important}.flex{display:-webkit-flex;display:-ms-flexbox;display:flex}.inline--flex{display:-webkit-inline-flex;display:-ms-inline-flexbox;display:inline-flex}.flex--row{-webkit-flex-direction:row;-ms-flex-direction:row;flex-direction:row}.flex--row--rev{-webkit-flex-direction:row-reverse;-ms-flex-direction:row-reverse;flex-direction:row-reverse}.flex--col{-webkit-flex-direction:column;-ms-flex-direction:column;flex-direction:column}.flex--col--rev{-webkit-flex-direction:column-reverse;-ms-flex-direction:column-reverse;flex-direction:column-reverse}.flex--nowrap{-webkit-flex-wrap:nowrap;-ms-flex-wrap:nowrap;flex-wrap:nowrap}.flex--wrap{-webkit-flex-wrap:wrap;-ms-flex-wrap:wrap;flex-wrap:wrap}.flex--wrap--rev{-webkit-flex-wrap:wrap-reverse;-ms-flex-wrap:wrap-reverse;flex-wrap:wrap-reverse}.flex--left{-webkit-justify-content:flex-start;-ms-flex-pack:start;justify-content:flex-start}.flex--center{-webkit-justify-content:center;-ms-flex-pack:center;justify-content:center}.flex--right{-webkit-justify-content:flex-end;-ms-flex-pack:end;justify-content:flex-end}.flex--justify{-webkit-justify-content:space-between;-ms-flex-pack:justify;justify-content:space-between}.flex--spaced{-webkit-justify-content:space-around;-ms-flex-pack:distribute;justify-content:space-around}.flex--top{-webkit-align-items:flex-start;-ms-flex-align:start;align-items:flex-start}.flex--middle{-webkit-align-items:center;-ms-flex-align:center;align-items:center}.flex--bottom{-webkit-align-items:flex-end;-ms-flex-align:end;align-items:flex-end}.flex--stretch{-webkit-align-items:stretch;-ms-flex-align:stretch;align-items:stretch}.flex--baseline{-webkit-align-items:baseline;-ms-flex-align:baseline;align-items:baseline}.flex--top--multi{-webkit-align-content:flex-start;-ms-flex-line-pack:start;align-content:flex-start}.flex--middle--multi{-webkit-align-content:center;-ms-flex-line-pack:center;align-content:center}.flex--bottom--multi{-webkit-align-content:flex-end;-ms-flex-line-pack:end;align-content:flex-end}.flex--stretch--multi{-webkit-align-content:stretch;-ms-flex-line-pack:stretch;align-content:stretch}.flex--justify--multi{-webkit-align-content:space-between;-ms-flex-line-pack:justify;align-content:space-between}.flex--spaced--multi{-webkit-align-content:space-around;-ms-flex-line-pack:distribute;align-content:space-around}.flex__item{-webkit-flex:1;-ms-flex:1;flex:1}.flex__item--top{-webkit-align-self:flex-start;-ms-flex-item-align:start;align-self:flex-start}.flex__item--middle{-webkit-align-self:center;-ms-flex-item-align:center;-ms-grid-row-align:center;align-self:center}.flex__item--bottom{-webkit-align-self:flex-end;-ms-flex-item-align:end;align-self:flex-end}.flex__item--baseline{-webkit-align-self:baseline;-ms-flex-item-align:baseline;align-self:baseline}.u-1\/2,.u-1\/3{-webkit-flex:none!important}.viewport{width:100%;max-width:80rem;margin-right:auto;margin-left:auto}.viewport--full-height{min-height:100vh}fieldset{margin:0}.form-field,legend{margin-bottom:1.33333rem}fieldset,fieldset legend{border:0;padding:0}legend{font-weight:700}.form-field:last-child{margin-bottom:2.66667rem}label{display:block;margin-bottom:.33333rem;cursor:pointer}.label--inline{display:inline-block;margin-bottom:0;line-height:1}.label--inline+.text-input{margin-left:.66667rem}.text-input,select,textarea{margin:0;border:1px solid #b1b1bc;font:inherit;outline:0;-webkit-appearance:none;-moz-appearance:none}.text-input:disabled,select:disabled,textarea:disabled{cursor:not-allowed}.text-input,textarea{width:100%;padding:0 .66667rem;box-shadow:inset 0 0 0 1px #e4e4ea;background-color:#efeff4;color:#000}.text-input[disabled],.text-input[readonly],textarea[disabled],textarea[readonly]{box-shadow:none}.text-input[readonly],textarea[readonly]{border:1px solid #e4e4ea;background-color:#fff;color:#b1b1bc}.text-input:disabled,textarea:disabled{border:1px solid #e4e4ea;box-shadow:none;background-color:#f7f7fc;color:#b1b1bc}.text-input:focus,textarea:focus{border-color:#0a9ec1;box-shadow:inset 0 0 0 1px #d1d0d8}select,select:active,select:focus,select:hover{box-shadow:0 1px 0 rgba(0,0,0,.1)}.text-input::-webkit-input-placeholder,textarea::-webkit-input-placeholder{color:#b1b1bc}.text-input:-moz-placeholder,textarea:-moz-placeholder{color:#b1b1bc}select{border-radius:3px;padding:0 3em 0 1em;line-height:calc(2em - 2px);height:calc(2em - 2px);cursor:pointer;background-color:#e4e4ea;background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20viewBox%3D%220%200%20658%201024%22%3E%3Cpath%20fill%3D%22%233b3b3f%22%20d%3D%22M614.286%20420.571q0%207.429-5.714%2013.143l-266.286%20266.286q-5.714%205.714-13.143%205.714t-13.143-5.714l-266.286-266.286q-5.714-5.714-5.714-13.143t5.714-13.143l28.571-28.571q5.714-5.714%2013.143-5.714t13.143%205.714l224.571%20224.571%20224.571-224.571q5.714-5.714%2013.143-5.714t13.143%205.714l28.571%2028.571q5.714%205.714%205.714%2013.143z%22%2F%3E%3C%2Fsvg%3E");background-repeat:no-repeat;background-position:calc(100% - .66667rem) 37.5%;color:#3b3b3f}select:focus,select:hover{border:1px solid #9999a3;background-color:#b1b1bc}select:active{border:1px solid #7c7c84;background-color:#9999a3}select:disabled{border:1px solid #d1d0d8;box-shadow:none;background-color:#fff;background-image:url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20viewBox%3D%220%200%20658%201024%22%3E%3Cpath%20fill%3D%22%23d1d0d8%22%20d%3D%22M614.286%20420.571q0%207.429-5.714%2013.143l-266.286%20266.286q-5.714%205.714-13.143%205.714t-13.143-5.714l-266.286-266.286q-5.714-5.714-5.714-13.143t5.714-13.143l28.571-28.571q5.714-5.714%2013.143-5.714t13.143%205.714l224.571%20224.571%20224.571-224.571q5.714-5.714%2013.143-5.714t13.143%205.714l28.571%2028.571q5.714%205.714%205.714%2013.143z%22%2F%3E%3C%2Fsvg%3E");color:#d1d0d8}select[multiple]{border:1px solid #b1b1bc;padding:.33333rem;cursor:pointer;background:#f7f7fc}select::-ms-expand{display:none}@-moz-document url-prefix(){select{padding-top:.4em;padding-bottom:.4em}}@media all and (-ms-high-contrast:none),(-ms-high-contrast:active){select{padding-top:.4em;padding-bottom:.4em}}.text-input{height:2em;line-height:1}.text-input+[type=checkbox],.text-input+[type=radio]{margin-left:1.33333rem}.text-input+.label--inline{margin-left:.66667rem}.text-input[type=search]{-webkit-appearance:none;padding:0}.text-input::-webkit-input-placeholder{padding-top:1px}.text-input:-moz-placeholder{padding-top:1px}.label--inline [type=cancel],.label--inline+[type=submit],.text-input [type=cancel],.text-input+[type=submit]{margin-left:1.33333rem}textarea{overflow:auto;min-height:calc(120px + .66667rem);padding:.33333rem .66667rem;resize:vertical}[type=checkbox],[type=radio]{margin:0;padding:0;font-size:1.05em;cursor:pointer}[type=checkbox][disabled],[type=checkbox][disabled]+.label--inline,[type=radio][disabled],[type=radio][disabled]+.label--inline{cursor:not-allowed}[type=checkbox]+.label--inline{padding-left:5px}[type=radio]+.label--inline{padding-left:3px}.form-field__help{display:inline-block;margin-top:.33333rem;font-size:1rem;line-height:inherit;color:#7c7c84}:host{/*! Comment to prevent cssmin munging this rule with html above and borking Safari */box-sizing:border-box;--dropdown_content_margin:5px 0px 0px 0px;display:-webkit-inline-flex;display:-ms-inline-flexbox;display:inline-flex}.dt-text-field{margin:0;border:1px solid #b1b1bc;font:inherit;outline:0;padding:.33333rem .66667rem .33333rem .33333rem;box-shadow:inset 0 0 0 1px #e4e4ea;background-color:#efeff4;color:#000}.u-mh,.u-mr{margin-right:1rem!important}.u-mh,.u-ml{margin-left:1rem!important}.u-mt,.u-mv{margin-top:1rem!important}.u-mb,.u-mv{margin-bottom:1rem!important}.dt-is-selected{border-color:#0a9ec1;box-shadow:inset 0 0 0 1px #d1d0d8}.clearfix:after{content:"";display:table;clear:both}.u-m{margin:1rem!important}.u-mh--,.u-mr--{margin-right:.33333rem!important}.u-mh--,.u-ml--{margin-left:.33333rem!important}.u-mt--,.u-mv--{margin-top:.33333rem!important}.u-mb--,.u-mv--{margin-bottom:.33333rem!important}.u-m--{margin:.33333rem!important}.u-mh-,.u-mr-{margin-right:.66667rem!important}.u-mh-,.u-ml-{margin-left:.66667rem!important}.u-mt-,.u-mv-{margin-top:.66667rem!important}.u-mb-,.u-mv-{margin-bottom:.66667rem!important}.u-m-{margin:.66667rem!important}.u-1\/1{width:100%!important}.u-1\/2{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4,.u-2\/3{-webkit-flex:none!important}.u-2\/3{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4,.u-3\/4{-webkit-flex:none!important}.u-2\/4{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6,.u-2\/6{-webkit-flex:none!important}.u-1\/6{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6,.u-4\/6{-webkit-flex:none!important}.u-3\/6{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}@media screen and (max-width:47.9rem){.u-1\/2-palm,.u-1\/3-palm{-webkit-flex:none!important}.u-1\/1-palm{width:100%!important}.u-1\/2-palm{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3-palm{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-palm,.u-2\/3-palm{-webkit-flex:none!important}.u-2\/3-palm{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-palm{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4-palm,.u-3\/4-palm{-webkit-flex:none!important}.u-2\/4-palm{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4-palm{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6-palm,.u-2\/6-palm{-webkit-flex:none!important}.u-1\/6-palm{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6-palm{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6-palm,.u-4\/6-palm{-webkit-flex:none!important}.u-3\/6-palm{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6-palm{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6-palm{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:48rem) and (max-width:63.9rem){.u-1\/2-lap,.u-1\/3-lap{-webkit-flex:none!important}.u-1\/1-lap{width:100%!important}.u-1\/2-lap{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3-lap{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-lap,.u-2\/3-lap{-webkit-flex:none!important}.u-2\/3-lap{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-lap{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4-lap,.u-3\/4-lap{-webkit-flex:none!important}.u-2\/4-lap{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4-lap{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6-lap,.u-2\/6-lap{-webkit-flex:none!important}.u-1\/6-lap{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6-lap{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6-lap,.u-4\/6-lap{-webkit-flex:none!important}.u-3\/6-lap{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6-lap{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6-lap{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:48rem){.u-1\/1-lap-and-up{width:100%!important}.u-1\/2-lap-and-up{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-lap-and-up{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-lap-and-up{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-lap-and-up{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-lap-and-up{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-lap-and-up{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-lap-and-up{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-lap-and-up{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-lap-and-up{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-lap-and-up{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-lap-and-up{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (max-width:63.9rem){.u-1\/1-portable{width:100%!important}.u-1\/2-portable{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-portable{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-portable{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-portable{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-portable{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-portable{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-portable{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-portable{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-portable{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-portable{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-portable{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:63.9rem){.u-1\/2-desk,.u-1\/3-desk{-webkit-flex:none!important}.u-1\/1-desk{width:100%!important}.u-1\/2-desk{width:50%!important;-ms-flex:none!important;flex:none!important}.u-1\/3-desk{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-desk,.u-2\/3-desk{-webkit-flex:none!important}.u-2\/3-desk{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-1\/4-desk{width:25%!important;-ms-flex:none!important;flex:none!important}.u-2\/4-desk,.u-3\/4-desk{-webkit-flex:none!important}.u-2\/4-desk{width:50%!important;-ms-flex:none!important;flex:none!important}.u-3\/4-desk{width:75%!important;-ms-flex:none!important;flex:none!important}.u-1\/6-desk,.u-2\/6-desk{-webkit-flex:none!important}.u-1\/6-desk{width:16.66667%!important;-ms-flex:none!important;flex:none!important}.u-2\/6-desk{width:33.33333%!important;-ms-flex:none!important;flex:none!important}.u-3\/6-desk,.u-4\/6-desk{-webkit-flex:none!important}.u-3\/6-desk{width:50%!important;-ms-flex:none!important;flex:none!important}.u-4\/6-desk{width:66.66667%!important;-ms-flex:none!important;flex:none!important}.u-5\/6-desk{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media screen and (min-width:100%){.u-1\/1-desk-wide{width:100%!important}.u-1\/2-desk-wide{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-desk-wide{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-desk-wide{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-desk-wide{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-desk-wide{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-desk-wide{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-desk-wide{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-desk-wide{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-desk-wide{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-desk-wide{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-desk-wide{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}@media (-webkit-min-device-pixel-ratio:2),(min-resolution:192dpi),(min-resolution:2dppx){.u-1\/1-retina{width:100%!important}.u-1\/2-retina{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/3-retina{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/3-retina{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/4-retina{width:25%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/4-retina{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/4-retina{width:75%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-1\/6-retina{width:16.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-2\/6-retina{width:33.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-3\/6-retina{width:50%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-4\/6-retina{width:66.66667%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}.u-5\/6-retina{width:83.33333%!important;-webkit-flex:none!important;-ms-flex:none!important;flex:none!important}}.validation-failed,.validation-failed:active{border:1px solid #e53838}
 </style>
 </template>
 </dom-module>
@@ -28904,6 +29338,10 @@ var pxDatetimeBehavior = [{
       }
     },
 
+    /**
+    * returns the correct id for the series
+    *
+    */
     _calcId: function(d,i){
       if(this.dataIds[i]){
         return this.dataIds[i];
@@ -28914,6 +29352,10 @@ var pxDatetimeBehavior = [{
       }
     },
 
+    /**
+    * Merges n sorted arrays into an array of objects
+    *
+    */
     _computeChartData: function() {
       if(this.originalData.length > 0){
         // put in check to see if we have sorted data or not
@@ -28982,6 +29424,10 @@ var pxDatetimeBehavior = [{
       }
     },
 
+    /**
+    * bundles info in the original dataset into a new series config
+    *
+    */
     _computeSeriesConfig: function(){
       if(this.originalData.length > 0){
         var seriesConfig = {},
@@ -29060,7 +29506,6 @@ var pxDatetimeBehavior = [{
               { &quot;for&quot;:&quot;&quot;, &quot;type&quot;:&quot;quartile&quot;, &quot;value&quot;:17 }
             ],
             &quot;showThresholdBox&quot;:false,
-            &quot;includeAllSeries&quot;: true,
             &quot;selectionType&quot;: &quot;xAxis&quot;,
             &quot;xAxisConfig&quot;: {
               &quot;title&quot;: &quot;Date&quot;,
