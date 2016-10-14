@@ -8518,7 +8518,7 @@ PxVisBehavior.sizing = {
     },
 
     /**
-    * Defines the base margin for the chart. Calcs are run to add to the margin to accomodate axes and other elements which exist within the SVG frame, but outside the chart frame.
+    * Defines the base margin for the chart. Calcs are run to add to the margin to accommodate axes and other elements which exist within the SVG frame, but outside the chart frame.
     *
     */
     margin:{
@@ -9225,11 +9225,11 @@ PxVisBehavior.events = {
   properties: {
     /**
      * Configuration object to define what event should map to what icon and color.
-     * The object has a key being the event name, the value being a the configuration object for that event. The configuration object has four properties:
+     * The object has a key being the event name, the value being a configuration object for that event. The configuration object has four properties:
      * - `color`: A valid color name found in the px-colors-design
      * - `icon`: the reference to the icon; for Font Awesome, it can be a class or a unicode value; for an image, it is a path
      * - `type`: 'fa', 'unicode', or 'image'. 'fa' and 'unicode' are font-awesome icons, 'fa' referring to the class ('fa-camera') and 'unicode' referring to the unicode value for the icon formatted as '\uf004'
-     * - `offset`: an 2 element array with the number of pixels to offset the icon. offset[0] is along the x-axis; offset[1] is along the y-axis; necessary for some icons to adjust their values to acheive a better alignment over the event line.
+     * - `offset`: a 2 element array with the number of pixels to offset the icon. offset[0] is along the x-axis; offset[1] is along the y-axis; necessary for some icons to adjust their values to achieve a better alignment over the event line.
      *
      * ```
      * Format: {
@@ -12794,7 +12794,9 @@ PxVisBehaviorTime.datetime = {
       this._watchConfigProperty('markerStrokeOpacity', 1);
       this._watchConfigProperty('mutedOpacity', 0.3);
     },
-
+    detached: function() {
+     this.scatterGroup.remove();
+    },
     /**
      * Draws or updates the scatter element.
      * Called from an observer watching for data and the necessary d3 objects
@@ -16652,7 +16654,7 @@ PxVisBehaviorTime.datetime = {
         <px-vis-svg width="[[width]]" height="[[height]]" margin="[[margin]]" svg="{{svg}}" px-svg-elem="{{pxSvgElem}}">
         </px-vis-svg>
 
-        <template is="dom-repeat" items="[[_seriesKeys)]]">
+        <template is="dom-repeat" items="[[_seriesKeys]]">
           <template is="dom-if" if="[[_limitSeries(index,navSeriesLimit)]]">
             <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]">
               <px-vis-line svg="[[svg]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" domain-changed="[[domainChanged]]" muted-series="[[mutedSeries]]">
@@ -19050,7 +19052,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     <style include="px-theme-styles"></style>
     <div id="registerWrap" class="inline--flex flex--col" style$="height:{{height}}px; width:[[width]]px">
 
-      <template is="dom-if" if="{{_isOfType(xAxisType,'time')}}">
+      <template is="dom-if" if="{{_displayTime(xAxisType, forceDateTimeDisplay)}}">
         <px-vis-register-datetime first-date-time="[[_firstDateTime]]" second-date-time="[[_secondDateTime]]" separator="[[_separator]]" x-axis-type="[[xAxisType]]"></px-vis-register-datetime>
       </template>
 
@@ -19121,8 +19123,13 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
         notify: true,
         computed: '_computeSeries(tooltipData.series.*)'
       },
-
-
+      /**
+       * Forces the use of the timestamp at the top
+       */
+      forceDateTimeDisplay: {
+        type: Boolean,
+        value: false
+      }
     },
 
     observers: [
@@ -19179,6 +19186,9 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     */
     _computeSeries: function() {
       return this.tooltipData.series;
+    },
+    _displayTime: function(xAxisType, forceDateTimeDisplay) {
+      return forceDateTimeDisplay || xAxisType === 'time';
     }
   });
   </script>
@@ -19717,8 +19727,8 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
     </px-vis-clip-path>
 
     <template is="dom-repeat" items="[[_seriesKeys]]">
-      <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]">
-        <template is="dom-if" if="[[renderToCanvas]]">
+      <template is="dom-if" if="[[_chartTypeLine(item,completeSeriesConfig)]]" restamp="">
+        <template is="dom-if" if="[[renderToCanvas]]" restamp="">
           <px-vis-line-canvas id="lineCanvas" canvas-context="[[canvasContext]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" domain-changed="[[domainChanged]]" muted-series="[[mutedSeries]]" no-canvas-progressive-rendering="[[noCanvasProgressiveRendering]]" width="[[width]]" height="[[height]]" margin="[[margin]]" clip-path="">
           </px-vis-line-canvas>
         </template>
@@ -19727,7 +19737,7 @@ function(){"use strict";var a={langLocaleCode:"zh-TW",cultureCode:"zh-TW",delimi
           </px-vis-line>
         </template>
       </template>
-      <template is="dom-if" if="[[_chartTypeScatter(item,completeSeriesConfig)]]">
+      <template is="dom-if" if="[[_chartTypeScatter(item,completeSeriesConfig)]]" restamp="">
         <px-vis-scatter svg="[[svg]]" series-id="[[item]]" chart-data="[[chartData]]" complete-series-config="[[completeSeriesConfig]]" x="[[x]]" y="[[y]]" current-domain-x="[[currentDomainX]]" current-domain-y="[[currentDomainY]]" domain-changed="[[domainChanged]]" clip-path="[[seriesClipPath]]" muted-series="[[mutedSeries]]">
         </px-vis-scatter>
       </template>

@@ -1,3 +1,15 @@
+v0.6.10
+==================
+* make sure scatter removes on detached
+
+v0.6.9
+==================
+* ensure forceDateTimeDisplay works with new registers
+
+v0.6.8
+==================
+* fix typo that would break the navigator series drawing
+
 v0.6.7
 ==================
 * make sure addition/removal of series to seriesConfig are correctly processed

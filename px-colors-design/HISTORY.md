@@ -1,3 +1,13 @@
+v0.2.20
+==============================
+* Install new version of `px-sass-doc` component
+* Fix import comment in code
+* Remove `--strip-comments` flag from vulcanize
+
+v0.2.19
+==============================
+* updated demo
+
 v0.2.18
 ==============================
 * fixed demo for Travis
